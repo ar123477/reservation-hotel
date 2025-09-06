@@ -156,3 +156,7 @@ function handleContactForm(e) {
     // Réinitialiser le formulaire
     e.target.reset();
 }
+import ManagerDashboard from './components/ManagerDashboard';
+
+// Ajoutez cette route dans votre Router
+<Route path="/manager" component={ManagerDashboard} />
