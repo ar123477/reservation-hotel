@@ -156,7 +156,28 @@ function handleContactForm(e) {
     // Réinitialiser le formulaire
     e.target.reset();
 }
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Navbar from './components/Navbar';
 import ManagerDashboard from './components/ManagerDashboard';
+import HotelPage from './pages/hotel';  // Chemodifié
+import './styles/style.css';  // Chemodifié
 
-// Ajoutez cette route dans votre Router
-<Route path="/manager" component={ManagerDashboard} />
+function App() {
+  return (
+    <Router>
+      <div className="App">
+        <Navbar />
+        <Routes>
+          <Route path="/" element={<HotelPage />} />
+          <Route path="/hotels" element={<HotelPage />} />
+          <Route path="/dashboard" element={<ManagerDashboard />} />
+        </Routes>
+      </div>
+    </Router>
+  );
+}
+
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);

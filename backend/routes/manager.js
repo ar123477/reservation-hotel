@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const auth = require('../middleware/auth');
+const { auth, managerAuth } = require('../middleware/auth');
 const isManager = require('../middleware/isManager');
 const db = require('../config/database');
 const upload = require('../config/multer');

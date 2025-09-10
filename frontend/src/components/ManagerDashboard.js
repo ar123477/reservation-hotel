@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import axios from 'axios';
-import './ManagerDashboard.css';
+import '../styles/ManagerDashboard.css';  // Chemodifié
 
 const ManagerDashboard = () => {
   const [activeTab, setActiveTab] = useState('reservations');
