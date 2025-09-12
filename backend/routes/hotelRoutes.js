@@ -1,11 +1,23 @@
 const express = require('express');
 const router = express.Router();
-const hotelController = require('../controllers/hotelController');
+const db = require('../config/db');
 
-router.get('/', hotelController.getAllHotels);
-router.get('/:id', hotelController.getHotelById);
-router.post('/', hotelController.createHotel);
-router.put('/:id', hotelController.updateHotel);
-router.delete('/:id', hotelController.deleteHotel);
+// GET tous les hôtels
+router.get('/', (req, res) => {
+  db.query('SELECT * FROM hotels', (err, results) => {
+    if (err) return res.status(500).json({ error: err });
+    res.json(results);
+  });
+});
+
+// POST ajouter un hôtel
+router.post('/', (req, res) => {
+  const { name, address, city, description, rating, images } = req.body;
+  const query = 'INSERT INTO hotels (name, address, city, description, rating, images) VALUES (?, ?, ?, ?, ?, ?)';
+  db.query(query, [name, address, city, description, rating, JSON.stringify(images)], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.status(201).json({ message: 'Hôtel ajouté avec succès' });
+  });
+});
 
 module.exports = router;
