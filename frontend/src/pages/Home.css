@@ -70,3 +70,9 @@
   padding: 20px;
   border-radius: 8px;
 }
+.hero-section {
+  background: url('../assets/hero.jpg') center center/cover no-repeat;
+  min-height: 80vh;
+  display: flex;
+  align-items: center;
+}
