@@ -1,18 +1,15 @@
 const mysql = require('mysql2');
+const dotenv = require('dotenv');
+dotenv.config();
 
-const db = mysql.createConnection({
-  host: 'localhost',
-  user: 'root',
-  password: '', // mets ton mot de passe XAMPP ici si tu en as un
-  database: 'hotel_booking'
+const pool = mysql.createPool({
+  host: '127.0.0.1',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD || '',
+  database: process.env.DB_NAME || 'hotel_booking',
+  waitForConnections: true,
+  connectionLimit: 10,
+  queueLimit: 0,
 });
 
-db.connect((err) => {
-  if (err) {
-    console.error('Erreur de connexion à la base de données :', err);
-  } else {
-    console.log('Connecté à la base de données MySQL');
-  }
-});
-
-module.exports = db;
+module.exports = pool.promise();

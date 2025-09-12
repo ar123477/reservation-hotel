@@ -1,64 +1,59 @@
-const Hotel = require('../models/Hotel');
+const db = require('../config/db');
+const fs = require('fs');
 
-exports.getAllHotels = (req, res) => {
-  Hotel.findAll((err, hotels) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération des hôtels' });
-    }
-    res.json(hotels);
-  });
+exports.getHotels = async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM hotels');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la récupération des hôtels' });
+  }
 };
 
-exports.getHotelById = (req, res) => {
-  const { id } = req.params;
-  Hotel.findById(id, (err, hotel) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération de l\'hôtel' });
-    }
-    if (!hotel) {
-      return res.status(404).json({ error: 'Hôtel non trouvé' });
-    }
-    res.json(hotel);
-  });
+exports.createHotel = async (req, res) => {
+  try {
+    const { name, address, city, description, rating } = req.body;
+    const images = req.files ? req.files.map(file => file.filename) : [];
+
+    const [result] = await db.query(
+      'INSERT INTO hotels (name, address, city, description, rating, images) VALUES (?, ?, ?, ?, ?, ?)',
+      [name, address, city, description, rating || 0.0, JSON.stringify(images)]
+    );
+
+    res.status(201).json({ id: result.insertId, name, address, city, description, rating, images });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la création de l’hôtel' });
+  }
 };
 
-exports.createHotel = (req, res) => {
-  const { name, address, city, description, rating, images } = req.body;
-  const newHotel = { name, address, city, description, rating, images };
-  
-  Hotel.create(newHotel, (err, hotel) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la création de l\'hôtel' });
-    }
-    res.status(201).json(hotel);
-  });
+exports.updateHotel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, address, city, description, rating } = req.body;
+    const images = req.files ? req.files.map(file => file.filename) : [];
+
+    const [existing] = await db.query('SELECT images FROM hotels WHERE id = ?', [id]);
+    const oldImages = existing[0]?.images ? JSON.parse(existing[0].images) : [];
+
+    const finalImages = images.length > 0 ? images : oldImages;
+
+    await db.query(
+      'UPDATE hotels SET name = ?, address = ?, city = ?, description = ?, rating = ?, images = ? WHERE id = ?',
+      [name, address, city, description, rating || 0.0, JSON.stringify(finalImages), id]
+    );
+
+    res.json({ id, name, address, city, description, rating, images: finalImages });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la mise à jour de l’hôtel' });
+  }
 };
 
-exports.updateHotel = (req, res) => {
-  const { id } = req.params;
-  const { name, address, city, description, rating, images } = req.body;
-  const updatedHotel = { name, address, city, description, rating, images };
-  
-  Hotel.update(id, updatedHotel, (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'hôtel' });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Hôtel non trouvé' });
-    }
-    res.json({ message: 'Hôtel mis à jour avec succès' });
-  });
-};
-
-exports.deleteHotel = (req, res) => {
-  const { id } = req.params;
-  Hotel.delete(id, (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la suppression de l\'hôtel' });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Hôtel non trouvé' });
-    }
+exports.deleteHotel = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM hotels WHERE id = ?', [id]);
     res.json({ message: 'Hôtel supprimé avec succès' });
-  });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la suppression de l’hôtel' });
+  }
 };

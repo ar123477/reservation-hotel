@@ -1,50 +1,93 @@
-const Room = require('../models/Room');
+const db = require('../config/db');
+const fs = require('fs');
 
-exports.getRoomsByHotelId = (req, res) => {
-  const { hotelId } = req.params;
-  Room.findByHotelId(hotelId, (err, rooms) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération des chambres' });
-    }
-    res.json(rooms);
-  });
+exports.getRooms = async (req, res) => {
+  try {
+    const [rows] = await db.query('SELECT * FROM rooms');
+    res.json(rows);
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la récupération des chambres' });
+  }
 };
 
-exports.getAvailableRooms = (req, res) => {
-  const { hotelId } = req.params;
-  const { checkIn, checkOut } = req.query;
-  
-  Room.findAvailableByHotelAndDate(hotelId, checkIn, checkOut, (err, rooms) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la récupération des chambres disponibles' });
-    }
-    res.json(rooms);
-  });
+exports.createRoom = async (req, res) => {
+  try {
+    const {
+      hotel_id,
+      type,
+      price,
+      capacity,
+      amenities,
+      availability
+    } = req.body;
+
+    const image = req.file ? req.file.filename : null;
+
+    const [result] = await db.query(
+      'INSERT INTO rooms (hotel_id, type, price, capacity, amenities, availability, image) VALUES (?, ?, ?, ?, ?, ?, ?)',
+      [hotel_id, type, price, capacity, amenities, availability || 1, image]
+    );
+
+    res.status(201).json({
+      id: result.insertId,
+      hotel_id,
+      type,
+      price,
+      capacity,
+      amenities,
+      availability,
+      image
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la création de la chambre' });
+  }
 };
 
-exports.createRoom = (req, res) => {
-  const { hotel_id, type, price, capacity, amenities } = req.body;
-  const newRoom = { hotel_id, type, price, capacity, amenities };
-  
-  Room.create(newRoom, (err, room) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la création de la chambre' });
-    }
-    res.status(201).json(room);
-  });
+exports.updateRoom = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const {
+      hotel_id,
+      type,
+      price,
+      capacity,
+      amenities,
+      availability
+    } = req.body;
+
+    const image = req.file ? req.file.filename : null;
+
+    const [existing] = await db.query('SELECT image FROM rooms WHERE id = ?', [id]);
+    const oldImage = existing[0]?.image;
+
+    const finalImage = image || oldImage;
+
+    await db.query(
+      'UPDATE rooms SET hotel_id = ?, type = ?, price = ?, capacity = ?, amenities = ?, availability = ?, image = ? WHERE id = ?',
+      [hotel_id, type, price, capacity, amenities, availability || 1, finalImage, id]
+    );
+
+    res.json({
+      id,
+      hotel_id,
+      type,
+      price,
+      capacity,
+      amenities,
+      availability,
+      image: finalImage
+    });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la mise à jour de la chambre' });
+  }
 };
 
-exports.updateRoomAvailability = (req, res) => {
-  const { id } = req.params;
-  const { availability } = req.body;
-  
-  Room.updateAvailability(id, availability, (err, result) => {
-    if (err) {
-      return res.status(500).json({ error: 'Erreur lors de la mise à jour de la disponibilité' });
-    }
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: 'Chambre non trouvée' });
-    }
-    res.json({ message: 'Disponibilité mise à jour avec succès' });
-  });
+exports.deleteRoom = async (req, res) => {
+  try {
+    const { id } = req.params;
+    await db.query('DELETE FROM rooms WHERE id = ?', [id]);
+    res.json({ message: 'Chambre supprimée avec succès' });
+  } catch (err) {
+    res.status(500).json({ error: 'Erreur lors de la suppression de la chambre' });
+  }
 };
