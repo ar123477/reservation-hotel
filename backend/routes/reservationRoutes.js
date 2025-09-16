@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/db'); // ← correspond à ton fichier de connexion
-const verifyRole = require('../middlewares/verifyRole'); // ← middleware JWT
+const pool = require('../config/database'); // ← correspond à ton fichier de connexion
+const verifyRole = require('../middleware/verifyRole'); // ← middleware JWT
 
 // 🔐 Route sécurisée pour afficher les réservations d’un client
 router.get('/customer/:id', verifyRole('customer'), async (req, res) => {

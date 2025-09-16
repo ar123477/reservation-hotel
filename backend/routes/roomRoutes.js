@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const verifyRole = require('../middlewares/verifyRole');
+const verifyRole = require('../middleware/verifyRole');
 
 // 🔧 Ajouter une chambre
 router.post('/', verifyRole('hotel_manager'), async (req, res) => {

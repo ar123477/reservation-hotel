@@ -1,17 +1,33 @@
 
+// 🔧 Importations
+const express = require('express');
+const cors = require('cors');
+const dotenv = require('dotenv');
+
+// 🔐 Chargement des variables d’environnement
+dotenv.config();
+
+// 🚀 Initialisation de l’application
+const app = express();
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+// 🧩 Middlewares
+app.use(cors());
+app.use(express.json());
+
+// 📦 Importation des routes
 const hotelRoutes = require('./routes/hotelRoutes');
-app.use('/api/hotels', hotelRoutes);
-
 const availabilityRoutes = require('./routes/availabilityRoutes');
-app.use('/api/availability', availabilityRoutes);
- 
 const reservationRoutes = require('./routes/reservationRoutes');
-app.use('/api/reservations', reservationRoutes);
-
 const statsRoutes = require('./routes/stats');
-app.use('/api/stats', statsRoutes);
+const roomRoutes = require('./routes/roomRoutes');
 
-const roomRoutes = require('./routes/roomsRoutes');
+// 🛣️ Utilisation des routes
+app.use('/api/hotels', hotelRoutes);
+app.use('/api/availability', availabilityRoutes);
+app.use('/api/reservations', reservationRoutes);
+app.use('/api/stats', statsRoutes);
 app.use('/api/rooms', roomRoutes);
+
+// ✅ Lancement du serveur
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

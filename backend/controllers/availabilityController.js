@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../config/database');
 
 exports.updateAvailability = async (req, res) => {
   try {

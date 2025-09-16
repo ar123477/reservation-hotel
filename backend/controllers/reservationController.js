@@ -1,4 +1,4 @@
-const db = require('../config/db');
+const db = require('../config/database');
 
 // Vérifier la disponibilité d'une chambre
 exports.checkAvailability = async (req, res) => {

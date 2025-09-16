@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const verifyRole = require('../middlewares/verifyRole');
+const verifyRole = require('../middleware/verifyRole');
 const Hotel = require('../models/Hotel');
 const Room = require('../models/Room');
 

@@ -42,4 +42,4 @@ const AdminDashboard = () => {
   );
 };
 
-export default AdminDashboard;
+export default <AdminDashbo></AdminDashbo>

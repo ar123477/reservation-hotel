@@ -1,19 +1,33 @@
 const jwt = require('jsonwebtoken');
 
-function verifyRole(role) {
+const verifyRole = (requiredRole) => {
   return (req, res, next) => {
-    const token = req.headers.authorization?.split(" ")[1];
-    if (!token) return res.status(401).send("Token manquant");
+    const authHeader = req.headers.authorization;
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({ message: 'Token manquant ou mal formé' });
+    }
+
+    const token = authHeader.split(' ')[1];
 
     try {
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (decoded.role !== role) return res.status(403).send("Accès refusé");
-      req.user = decoded;
+
+      if (decoded.role !== requiredRole) {
+        return res.status(403).json({ message: 'Accès refusé : rôle insuffisant' });
+      }
+
+      req.user = {
+        id: decoded.id,
+        role: decoded.role,
+        hotel_id: decoded.hotel_id
+      };
+
       next();
     } catch (err) {
-      return res.status(401).send("Token invalide");
+      return res.status(401).json({ message: 'Token invalide ou expiré' });
     }
   };
-}
+};
 
 module.exports = verifyRole;

@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/db'); // ← ta connexion MySQL
-const verifyRole = require('../middlewares/verifyRole'); // ← middleware JWT
+const pool = require('../config/database'); // ← ta connexion MySQL
+const verifyRole = require('../middleware/verifyRole'); // ← middleware JWT
 
 router.get('/hotel/:id', verifyRole('hotel_manager'), async (req, res) => {
   const hotelId = req.params.id;
