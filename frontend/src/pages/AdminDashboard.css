@@ -1,0 +1,40 @@
+.dashboard-container {
+  max-width: 900px;
+  margin: auto;
+  padding: 20px;
+  font-family: Arial, sans-serif;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-buttons button {
+  padding: 10px 20px;
+  border: none;
+  background-color: #eee;
+  cursor: pointer;
+  border-radius: 5px;
+  font-weight: bold;
+}
+
+.tab-buttons button.active {
+  background-color: #007bff;
+  color: white;
+}
+
+.tab-content {
+  border-top: 1px solid #ccc;
+  padding-top: 20px;
+}
+.dashboard-wrapper {
+  display: flex;
+}
+
+.dashboard-content {
+  margin-left: 220px;
+  padding: 20px;
+  width: 100%;
+}

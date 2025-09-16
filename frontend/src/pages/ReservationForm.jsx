@@ -127,6 +127,8 @@ const ReservationForm = () => {
       {message && <p>{message}</p>}
     </div>
   );
+  toast.success("Réservation enregistrée !");
+
 };
 
 export default ReservationForm;

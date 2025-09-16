@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import '../assets/style.css'; // Ton CSS personnalisé
+import './Home.css'; // Ton CSS personnalisé
 
 function Home() {
   const [hotels, setHotels] = useState([]);
