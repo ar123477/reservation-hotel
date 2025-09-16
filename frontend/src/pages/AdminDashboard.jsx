@@ -1,33 +1,43 @@
-import React, { useState, useEffect } from 'react';
-import HotelStats from '../components/HotelStats';
+import React, { useState } from 'react';
+import HotelManager from '../components/HotelManager';
 import RoomManager from '../components/RoomManager';
-import ReservationChart from '../components/ReservationChart';
-import Sidebar from '../components/Sidebar';
-import './AdminDashboard.css';
+import AvailabilityUpdater from '../components/AvailabilityUpdater';
+
 
 const AdminDashboard = () => {
-  const hotelId = localStorage.getItem('hotel_id');
-  const [activeTab, setActiveTab] = useState('stats');
+  const [activeTab, setActiveTab] = useState('hotels');
+
+  const renderTab = () => {
+    switch (activeTab) {
+      case 'hotels':
+        return <HotelManager />;
+      case 'rooms':
+        return <RoomManager />;
+      case 'availability':
+        return <AvailabilityUpdater />;
+      default:
+        return <HotelManager />;
+    }
+  };
 
   return (
-    <div className="dashboard-wrapper">
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+    <div className="admin-dashboard">
+      <h1>Interface Admin – Gestion Hôtelière</h1>
 
-      <div className="dashboard-content">
-        <h2>Dashboard Gestionnaire</h2>
+      <nav style={{ marginBottom: '20px' }}>
+        <button onClick={() => setActiveTab('hotels')} style={{ marginRight: '10px' }}>
+          🏨 Hôtels
+        </button>
+        <button onClick={() => setActiveTab('rooms')} style={{ marginRight: '10px' }}>
+          🛏️ Chambres
+        </button>
+        <button onClick={() => setActiveTab('availability')}>
+          📊 Disponibilité
+        </button>
+      </nav>
 
-        {activeTab === 'stats' && (
-          <>
-            <HotelStats hotelId={hotelId} />
-            <ReservationChart hotelId={hotelId} />
-          </>
-        )}
-        {activeTab === 'rooms' && <RoomManager hotelId={hotelId} />}
-        {activeTab === 'hotels' && (
-          <div>
-            {/* Ton formulaire et liste d’hôtels ici */}
-          </div>
-        )}
+      <div className="admin-content">
+        {renderTab()}
       </div>
     </div>
   );
