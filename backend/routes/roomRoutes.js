@@ -4,6 +4,7 @@ const pool = require('../config/database');
 const verifyRole = require('../middleware/verifyRole');
 const multer = require("multer");
 
+// 📦 Configuration de l'upload d'image
 const storage = multer.diskStorage({
   destination: "uploads/",
   filename: (req, file, cb) => {
@@ -15,7 +16,7 @@ const upload = multer({ storage });
 
 
 // 🔍 Récupérer toutes les chambres
-router.get('/rooms', async (req, res) => {
+router.get('/', async (req, res) => {
   try {
     const [rooms] = await pool.query('SELECT * FROM rooms');
     res.json(rooms);
@@ -23,8 +24,9 @@ router.get('/rooms', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
 // 📥 Ajouter une chambre avec image
-router.post('/rooms', upload.single('image'), async (req, res) => {
+router.post('/', upload.single('image'), async (req, res) => {
   const { hotel_id, type, price, capacity, amenities, availability } = req.body;
   const image_url = req.file ? `/uploads/${req.file.filename}` : null;
 
@@ -46,8 +48,8 @@ router.post('/rooms', upload.single('image'), async (req, res) => {
   }
 });
 
-// 🛠️ Modifier une chambre avec image
-router.put('/rooms/:id', upload.single('image'), async (req, res) => {
+// ✏️ Modifier une chambre avec image
+router.put('/:id', upload.single('image'), async (req, res) => {
   const roomId = req.params.id;
   const { hotel_id, type, price, capacity, amenities, availability } = req.body;
   const image_url = req.file ? `/uploads/${req.file.filename}` : req.body.image;
@@ -71,7 +73,7 @@ router.put('/rooms/:id', upload.single('image'), async (req, res) => {
 });
 
 // 🗑️ Supprimer une chambre
-router.delete('/rooms/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   const roomId = req.params.id;
   try {
     await pool.query('DELETE FROM rooms WHERE id = ?', [roomId]);
@@ -80,6 +82,5 @@ router.delete('/rooms/:id', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
-
 
 module.exports = router;
