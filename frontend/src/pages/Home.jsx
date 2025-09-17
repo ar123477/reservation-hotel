@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import './Home.css'; // Ton CSS personnalisé
+import { Link } from 'react-router-dom';
+
 
 function Home() {
   const [hotels, setHotels] = useState([]);
@@ -114,6 +116,9 @@ function Home() {
                       <h5 className="card-title">{hotel.name}</h5>
                       <p className="card-text">{hotel.description}</p>
                       <p className="text-muted">{hotel.city}</p>
+                      <Link to={`/hotels/${hotel.id}`} className="btn-view-rooms">
+  Voir les chambres
+</Link>
                       <span className="badge bg-success">⭐ {hotel.rating}</span>
                     </div>
                   </div>
