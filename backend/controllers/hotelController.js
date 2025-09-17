@@ -10,20 +10,18 @@ exports.getHotels = async (req, res) => {
   }
 };
 
-exports.createHotel = async (req, res) => {
-  try {
-    const { name, address, city, description, rating } = req.body;
-    const images = req.files ? req.files.map(file => file.filename) : [];
+exports.createHotel = (req, res) => {
+  const { name, location, price } = req.body;
+  const imagePath = req.file ? req.file.path : null;
+  
+  const imageNames = req.files ? req.files.map(file => file.filename) : [];
+  const imagesJson = JSON.stringify(imageNames);
 
-    const [result] = await db.query(
-      'INSERT INTO hotels (name, address, city, description, rating, images) VALUES (?, ?, ?, ?, ?, ?)',
-      [name, address, city, description, rating || 0.0, JSON.stringify(images)]
-    );
-
-    res.status(201).json({ id: result.insertId, name, address, city, description, rating, images });
-  } catch (err) {
-    res.status(500).json({ error: 'Erreur lors de la création de l’hôtel' });
-  }
+  const sql = 'INSERT INTO hotels (name, location, price, image) VALUES (?, ?, ?, ?)';
+  db.query(sql, [name, location, price, imagePath], (err, result) => {
+    if (err) return res.status(500).json({ error: err });
+    res.status(201).json({ message: 'Hôtel ajouté', hotelId: result.insertId });
+  });
 };
 
 exports.updateHotel = async (req, res) => {

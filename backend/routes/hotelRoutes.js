@@ -1,9 +1,10 @@
 const express = require('express');
 const router = express.Router();
+const pool = require('../config/database');
+const upload = require('../config/uploadConfig'); // ✅ unique déclaration
 const hotelController = require('../controllers/hotelController');
-const upload = require('../middleware/upload');
-const pool = require('../config/database'); // ✅ ajouté
 
+// 🔄 Routes principales
 router.get('/', hotelController.getHotels);
 router.post('/', upload.array('images', 5), hotelController.createHotel);
 router.put('/:id', upload.array('images', 5), hotelController.updateHotel);
@@ -34,6 +35,4 @@ router.get('/:id', async (req, res) => {
   }
 });
 
-
 module.exports = router;
-

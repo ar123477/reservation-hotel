@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import 'bootstrap/dist/css/bootstrap.min.css';
-import './Home.css'; // Ton CSS personnalisé
+import './Home.css';
 import { Link } from 'react-router-dom';
-
 
 function Home() {
   const [hotels, setHotels] = useState([]);
@@ -111,15 +110,23 @@ function Home() {
               hotels.map(hotel => (
                 <div className="col-md-4 mb-4" key={hotel.id}>
                   <div className="card h-100 shadow-sm">
-                    <img src={`images/${JSON.parse(hotel.images)[0]}`} className="card-img-top" alt={hotel.name} />
+                    {hotel.images &&
+                      Array.isArray(JSON.parse(hotel.images)) &&
+                      JSON.parse(hotel.images).length > 0 && (
+                        <img
+                          src={`http://localhost:5000/uploads/${JSON.parse(hotel.images)[0]}`}
+                          className="card-img-top"
+                          alt={hotel.name}
+                        />
+                      )}
                     <div className="card-body">
                       <h5 className="card-title">{hotel.name}</h5>
                       <p className="card-text">{hotel.description}</p>
                       <p className="text-muted">{hotel.city}</p>
-                      <Link to={`/hotels/${hotel.id}`} className="btn-view-rooms">
-  Voir les chambres
-</Link>
-                      <span className="badge bg-success">⭐ {hotel.rating}</span>
+                      <Link to={`/hotels/${hotel.id}`} className="btn btn-primary">
+                        Voir les chambres
+                      </Link>
+                      <span className="badge bg-success ms-2">⭐ {hotel.rating}</span>
                     </div>
                   </div>
                 </div>
@@ -188,3 +195,4 @@ function Home() {
 }
 
 export default Home;
+

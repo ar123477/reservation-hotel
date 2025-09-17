@@ -28,7 +28,8 @@ const chambreRoutes = require('./routes/chambreRoutes');
 // 🛣️ Montage des routes
 app.use('/api/hotels', hotelRoutes);
 app.use('/api/availability', availabilityRoutes);
-app.use('/api/reservations', reservationRoutes);
+app.use('/api/reservations', require('./routes/reservationRoutes'));
+
 app.use('/api/stats', statsRoutes);
 app.use('/api/rooms', roomRoutes);
 app.use('/api/chambres', chambreRoutes);
