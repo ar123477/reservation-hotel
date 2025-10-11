@@ -1,57 +1,83 @@
 const db = require('../config/database');
-const fs = require('fs');
 
-exports.getHotels = async (req, res) => {
+const getHotels = async (req, res) => {
   try {
-    const [rows] = await db.query('SELECT * FROM hotels');
-    res.json(rows);
-  } catch (err) {
-    res.status(500).json({ error: 'Erreur lors de la récupération des hôtels' });
+    let query = "SELECT * FROM hotels WHERE statut = 'actif'";
+    let params = [];
+    
+    if (req.utilisateur.role === 'admin_hotel' && req.utilisateur.hotel_id) {
+      query += " AND id = ?";
+      params.push(req.utilisateur.hotel_id);
+    }
+    
+    const [hotels] = await db.execute(query, params);
+    res.json(hotels);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-exports.createHotel = (req, res) => {
-  const { name, location, price } = req.body;
-  const imagePath = req.file ? req.file.path : null;
-  
-  const imageNames = req.files ? req.files.map(file => file.filename) : [];
-  const imagesJson = JSON.stringify(imageNames);
-
-  const sql = 'INSERT INTO hotels (name, location, price, image) VALUES (?, ?, ?, ?)';
-  db.query(sql, [name, location, price, imagePath], (err, result) => {
-    if (err) return res.status(500).json({ error: err });
-    res.status(201).json({ message: 'Hôtel ajouté', hotelId: result.insertId });
-  });
-};
-
-exports.updateHotel = async (req, res) => {
+const getDetailsHotel = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, address, city, description, rating } = req.body;
-    const images = req.files ? req.files.map(file => file.filename) : [];
+    const hotelId = req.params.id;
+    
+    // Vérifier les permissions
+    if (req.utilisateur.role !== 'super_admin' && req.utilisateur.hotel_id != hotelId) {
+      return res.status(403).json({ message: 'Accès non autorisé' });
+    }
 
-    const [existing] = await db.query('SELECT images FROM hotels WHERE id = ?', [id]);
-    const oldImages = existing[0]?.images ? JSON.parse(existing[0].images) : [];
-
-    const finalImages = images.length > 0 ? images : oldImages;
-
-    await db.query(
-      'UPDATE hotels SET name = ?, address = ?, city = ?, description = ?, rating = ?, images = ? WHERE id = ?',
-      [name, address, city, description, rating || 0.0, JSON.stringify(finalImages), id]
+    const [hotels] = await db.execute(
+      'SELECT * FROM hotels WHERE id = ?',
+      [hotelId]
     );
 
-    res.json({ id, name, address, city, description, rating, images: finalImages });
-  } catch (err) {
-    res.status(500).json({ error: 'Erreur lors de la mise à jour de l’hôtel' });
+    if (hotels.length === 0) {
+      return res.status(404).json({ message: 'Hôtel non trouvé' });
+    }
+
+    const hotel = hotels[0];
+    res.json({ hotel });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
-exports.deleteHotel = async (req, res) => {
+const creerHotel = async (req, res) => {
   try {
-    const { id } = req.params;
-    await db.query('DELETE FROM hotels WHERE id = ?', [id]);
-    res.json({ message: 'Hôtel supprimé avec succès' });
-  } catch (err) {
-    res.status(500).json({ error: 'Erreur lors de la suppression de l’hôtel' });
+    const { nom, adresse, telephone, email } = req.body;
+    
+    if (req.utilisateur.role !== 'super_admin') {
+      return res.status(403).json({ message: 'Accès non autorisé' });
+    }
+
+    if (!nom || !adresse) {
+      return res.status(400).json({ message: 'Nom et adresse sont obligatoires' });
+    }
+
+    const [result] = await db.execute(
+      'INSERT INTO hotels (nom, adresse, telephone, email) VALUES (?, ?, ?, ?)',
+      [nom, adresse, telephone, email]
+    );
+
+    res.status(201).json({ 
+      message: 'Hôtel créé avec succès',
+      hotel: {
+        id: result.insertId,
+        nom,
+        adresse,
+        telephone,
+        email,
+        statut: 'actif'
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
+};
+
+// ⚠️ ASSUREZ-VOUS D'EXPORTER LES FONCTIONS !
+module.exports = { 
+  getHotels, 
+  getDetailsHotel, 
+  creerHotel 
 };
