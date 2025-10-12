@@ -1,28 +1,63 @@
-// src/pages/HotelDetails.js
+﻿// src/pages/HotelDetails.js - VERSION DÉBOGAGE
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { HOTELS_DATA, ROOM_TYPES } from '../utils/constants';
+import { hotelsAPI, roomsAPI } from '../services/api';
+import { useApiData } from '../hooks/useApiData';
+import { adaptHotelData, adaptRoomData } from '../utils/dataAdapter';
 import ImageCarousel from '../components/common/ImageCarousel';
 import RoomCard from '../components/hotel/RoomCard';
 
 const HotelDetails = () => {
   const { id } = useParams();
-  const [hotel, setHotel] = useState(null);
-  const [selectedRoom, setSelectedRoom] = useState(null);
   const [activeTab, setActiveTab] = useState('chambres');
+  console.log('HotelDetails - ID:', id);
 
-  useEffect(() => {
-    const foundHotel = HOTELS_DATA.find(h => h.id === parseInt(id));
-    setHotel(foundHotel);
-  }, [id]);
+  // Charger les données de l'hôtel
+  const { data: hotel, loading: hotelLoading, error: hotelError } = useApiData(
+    () => hotelsAPI.getById(id),
+    adaptHotelData
+  );
 
-  if (!hotel) {
+  // Charger les chambres de l'hôtel
+  const { data: rooms, loading: roomsLoading, error: roomsError } = useApiData(
+    () => roomsAPI.getByHotel(id),
+    (backendData) => {
+      console.log('Chambres brutes:', backendData);
+      const adapted = backendData.map(adaptRoomData);
+      console.log('Chambres adaptées:', adapted);
+      return adapted;
+    }
+  );
+
+  console.log('Hotel data:', hotel);
+  console.log('Rooms data:', rooms);
+  console.log('Hotel loading:', hotelLoading, 'Error:', hotelError);
+  console.log('Rooms loading:', roomsLoading, 'Error:', roomsError);
+
+  if (hotelLoading) {
     return (
       <div className="container">
-        <div className="loading">Chargement...</div>
+        <div className="loading">Chargement de l'hôtel...</div>
       </div>
     );
   }
+
+  if (hotelError || !hotel) {
+    return (
+      <div className="container">
+        <div className="error-message">
+          Erreur: {hotelError || 'Hôtel non trouvé'}
+          <br />
+          ID recherché: {id}
+        </div>
+      </div>
+    );
+  }
+
+  const defaultImages = [
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=500&h=300&fit=crop'
+  ];
 
   return (
     <div className="hotel-details-page">
@@ -30,7 +65,7 @@ const HotelDetails = () => {
         {/* Header avec carrousel */}
         <div className="hotel-header">
           <div className="hotel-gallery">
-            <ImageCarousel images={hotel.images} alt={hotel.nom} />
+            <ImageCarousel images={hotel.images || defaultImages} alt={hotel.nom} />
           </div>
           
           <div className="hotel-overview">
@@ -39,15 +74,15 @@ const HotelDetails = () => {
             
             <div className="hotel-rating">
               <div className="stars">
-                {'★'.repeat(Math.floor(hotel.note))}
-                <span className="rating-value">{hotel.note}/5</span>
+                {'★'.repeat(Math.floor(hotel.note || 4))}
+                <span className="rating-value">{hotel.note || 4.0}/5</span>
               </div>
-              <span className="reviews">(128 avis)</span>
+              <span className="reviews">(avis)</span>
             </div>
             
             <div className="hotel-price">
               <span className="starting-from">À partir de</span>
-              <span className="price">{hotel.prix_min.toLocaleString()} FCFA</span>
+              <span className="price">{(hotel.prix_min || 30000).toLocaleString()} FCFA</span>
               <span className="period">par nuit</span>
             </div>
             
@@ -80,12 +115,6 @@ const HotelDetails = () => {
           >
             🏊 Équipements
           </button>
-          <button 
-            className={activeTab === 'avis' ? 'active' : ''}
-            onClick={() => setActiveTab('avis')}
-          >
-            ⭐ Avis
-          </button>
         </nav>
 
         {/* Contenu des onglets */}
@@ -93,127 +122,47 @@ const HotelDetails = () => {
           {activeTab === 'chambres' && (
             <section id="chambres-section" className="rooms-section">
               <h2>Nos Types de Chambres</h2>
-              <p className="section-subtitle">
-                Découvrez notre gamme complète de chambres et suites
-              </p>
               
-              <div className="rooms-grid">
-                {ROOM_TYPES.map(room => (
-                  <RoomCard 
-                    key={room.id}
-                    room={room}
-                    hotel={hotel}
-                    onSelect={setSelectedRoom}
-                  />
-                ))}
-              </div>
+              {roomsLoading ? (
+                <div className="loading">Chargement des chambres...</div>
+              ) : roomsError ? (
+                <div className="error-message">Erreur chambres: {roomsError}</div>
+              ) : rooms && rooms.length > 0 ? (
+                <div className="rooms-grid">
+                  {rooms.map(room => (
+                    <div key={room.id}>
+                      <RoomCard 
+                        room={room}
+                        hotel={hotel}
+                      />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="no-rooms">
+                  <p>Aucune chambre disponible pour cet hôtel</p>
+                </div>
+              )}
             </section>
           )}
 
           {activeTab === 'description' && (
             <section className="description-section">
               <h2>À Propos de {hotel.nom}</h2>
-              <p>{hotel.description}</p>
-              
-              <div className="description-details">
-                <h3>Notre Philosophie</h3>
-                <p>
-                  Situé au cœur du Togo, notre établissement allie tradition africaine 
-                  et modernité pour vous offrir une expérience unique. Profitez de notre 
-                  cadre exceptionnel et de notre service personnalisé.
-                </p>
-                
-                <h3>Localisation</h3>
-                <p>
-                  Idéalement situé à proximité des centres d'affaires, des sites touristiques 
-                  et des plages, {hotel.nom} est le point de départ parfait pour découvrir 
-                  la richesse culturelle du Togo.
-                </p>
-              </div>
+              <p>{hotel.description || "Hôtel de qualité offrant un service exceptionnel."}</p>
             </section>
           )}
 
           {activeTab === 'equipements' && (
             <section className="amenities-section">
               <h2>Équipements et Services</h2>
-              
               <div className="amenities-grid">
-                {hotel.equipements.map((amenity, index) => (
+                {(hotel.equipements || ['Wi-Fi', 'Climatisation', 'Restaurant']).map((amenity, index) => (
                   <div key={index} className="amenity-item">
                     <span className="amenity-icon">✅</span>
                     <span>{amenity}</span>
                   </div>
                 ))}
-                
-                {/* Équipements supplémentaires */}
-                {[
-                  "Service de chambre 24h/24",
-                  "Conciergerie",
-                  "Parking sécurisé",
-                  "Navette aéroport",
-                  "Centre d'affaires",
-                  "Salle de fitness"
-                ].map((amenity, index) => (
-                  <div key={index} className="amenity-item">
-                    <span className="amenity-icon">✅</span>
-                    <span>{amenity}</span>
-                  </div>
-                ))}
-              </div>
-            </section>
-          )}
-
-          {activeTab === 'avis' && (
-            <section className="reviews-section">
-              <h2>Avis des Clients</h2>
-              
-              <div className="reviews-summary">
-                <div className="overall-rating">
-                  <div className="rating-score">{hotel.note}</div>
-                  <div className="rating-stars">{'★'.repeat(5)}</div>
-                  <div className="rating-count">128 avis</div>
-                </div>
-                
-                <div className="rating-bars">
-                  {[5, 4, 3, 2, 1].map(stars => (
-                    <div key={stars} className="rating-bar">
-                      <span>{stars} ★</span>
-                      <div className="bar">
-                        <div 
-                          className="bar-fill"
-                          style={{width: `${(stars / 5) * 100}%`}}
-                        ></div>
-                      </div>
-                      <span>64%</span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-              
-              <div className="reviews-list">
-                <div className="review-card">
-                  <div className="review-header">
-                    <div className="reviewer">Jean D.</div>
-                    <div className="review-rating">★★★★★</div>
-                  </div>
-                  <p className="review-text">
-                    "Exceptionnel ! Le service est impeccable et les chambres sont magnifiques. 
-                    Je recommande vivement cet établissement."
-                  </p>
-                  <div className="review-date">15 Novembre 2024</div>
-                </div>
-                
-                <div className="review-card">
-                  <div className="review-header">
-                    <div className="reviewer">Marie K.</div>
-                    <div className="review-rating">★★★★☆</div>
-                  </div>
-                  <p className="review-text">
-                    "Très bel hôtel avec une vue magnifique. Le petit déjeuner est excellent. 
-                    Juste un peu cher mais la qualité est au rendez-vous."
-                  </p>
-                  <div className="review-date">8 Novembre 2024</div>
-                </div>
               </div>
             </section>
           )}

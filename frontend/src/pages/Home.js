@@ -1,4 +1,4 @@
-// src/pages/Home.js - VERSION CONNECTÉE
+// src/pages/Home.js - CORRIGÉ POUR LA BONNE SIGNATURE
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApiData } from '../hooks/useApiData';
@@ -7,10 +7,11 @@ import { adaptHotelData } from '../utils/dataAdapter';
 import HotelCard from '../components/hotel/HotelCard';
 
 const Home = () => {
-  // Chargement des hôtels depuis VOTRE backend
+  // CORRECTION : Utiliser la signature attendue par useApiData
   const { data: hotels, loading, error } = useApiData(
-    () => hotelsAPI.getAll(),
-    (backendData) => backendData.map(adaptHotelData)
+    hotelsAPI.getAll,      // Référence directe à la fonction
+    adaptHotelData,        // Adaptateur simple
+    []                     // Dépendances
   );
 
   const featuredHotels = hotels ? hotels.slice(0, 3) : [];
@@ -50,7 +51,10 @@ const Home = () => {
           </div>
         </div>
         <div className="hero-image">
-          <img src="/images/hero-togo.jpg" alt="Hôtel de luxe au Togo" />
+          <img 
+            src="https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=600&h=400&fit=crop" 
+            alt="Hôtel de luxe au Togo" 
+          />
         </div>
       </section>
 
@@ -70,14 +74,14 @@ const Home = () => {
             </div>
             <div className="section-cta">
               <Link to="/hotels" className="btn-outline">
-                Voir Tous les Hôtels ({hotels.length})
+                Voir Tous les Hôtels ({hotels ? hotels.length : 0})
               </Link>
             </div>
           </div>
         </section>
       )}
 
-      {/* Autres sections restent identiques */}
+      {/* Types de réservation */}
       <section className="reservation-types">
         <div className="container">
           <h2>Deux Façons de Réserver</h2>

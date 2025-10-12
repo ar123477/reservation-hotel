@@ -77,3 +77,17 @@ export const VILLES_TOGO = [
   { id: 4, nom: "Kpalimé", hotels: [] },
   { id: 5, nom: "Atakpamé", hotels: [] }
 ];
+// Types de chambres
+export const ROOM_TYPES = {
+  SINGLE: "Chambre Simple",
+  DOUBLE: "Chambre Double", 
+  SUITE: "Suite",
+  DELUXE: "Chambre Deluxe"
+};
+
+export const ROOM_TYPES_ARRAY = [
+  { value: "SINGLE", label: "Chambre Simple" },
+  { value: "DOUBLE", label: "Chambre Double" },
+  { value: "SUITE", label: "Suite" },
+  { value: "DELUXE", label: "Chambre Deluxe" }
+];

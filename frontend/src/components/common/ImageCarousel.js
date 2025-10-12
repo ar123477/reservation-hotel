@@ -1,15 +1,28 @@
-// src/components/common/ImageCarousel.js
+﻿// src/components/common/ImageCarousel.js
 import React, { useState } from 'react';
 
 const ImageCarousel = ({ images, alt }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
   const nextImage = () => {
-    setCurrentIndex((prev) => (prev + 1) % images.length);
+    setCurrentIndex((prevIndex) => 
+      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+    );
   };
 
   const prevImage = () => {
-    setCurrentIndex((prev) => (prev - 1 + images.length) % images.length);
+    setCurrentIndex((prevIndex) => 
+      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+    );
+  };
+
+  const goToImage = (index) => {
+    setCurrentIndex(index);
+  };
+
+  // Gestion des erreurs d'image
+  const handleImageError = (e) => {
+    e.target.src = '/images/default-hotel.jpg';
   };
 
   return (
@@ -18,26 +31,40 @@ const ImageCarousel = ({ images, alt }) => {
         <img 
           src={images[currentIndex]} 
           alt={`${alt} - Image ${currentIndex + 1}`}
+          onError={handleImageError}
           className="carousel-image"
         />
         
         {images.length > 1 && (
           <>
-            <button className="carousel-btn prev" onClick={prevImage}>
+            <button 
+              className="carousel-btn prev-btn" 
+              onClick={prevImage}
+              aria-label="Image précédente"
+            >
               ‹
             </button>
-            <button className="carousel-btn next" onClick={nextImage}>
+            <button 
+              className="carousel-btn next-btn" 
+              onClick={nextImage}
+              aria-label="Image suivante"
+            >
               ›
             </button>
             
-            <div className="carousel-dots">
+            <div className="carousel-indicators">
               {images.map((_, index) => (
                 <button
                   key={index}
-                  className={`dot ${index === currentIndex ? 'active' : ''}`}
-                  onClick={() => setCurrentIndex(index)}
+                  className={`indicator ${index === currentIndex ? 'active' : ''}`}
+                  onClick={() => goToImage(index)}
+                  aria-label={`Aller à l'image ${index + 1}`}
                 />
               ))}
+            </div>
+            
+            <div className="carousel-counter">
+              {currentIndex + 1} / {images.length}
             </div>
           </>
         )}
