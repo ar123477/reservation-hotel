@@ -15,6 +15,7 @@ app.use('/api/chambres', require('./routes/chambreRoutes'));
 app.use('/api/reservations', require('./routes/reservationRoutes'));
 app.use('/api/nettoyage', require('./routes/nettoyageRoutes'));
 app.use('/api/reception', require('./routes/receptionRoutes'));
+app.use('/api/paiements', require('./routes/paymentRoutes')); // ✅ PAYMENT INCLUS
 
 // Route de test
 app.get('/api/test', (req, res) => {
@@ -35,7 +36,8 @@ app.get('/', (req, res) => {
       chambres: '/api/chambres',
       reservations: '/api/reservations',
       nettoyage: '/api/nettoyage',
-      reception: '/api/reception'
+      reception: '/api/reception',
+      paiements: '/api/paiements' // ✅ CORRECTION : PAYMENT AJOUTÉ
     }
   });
 });

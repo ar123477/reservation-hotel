@@ -10,8 +10,8 @@ const simulerPaiementEnLigne = async (req, res) => {
       return res.status(400).json({ message: 'ID de réservation requis' });
     }
 
-    // Vérifier que la réservation existe
-    const reservation = await Reservation.findById(reservationId);
+    // ⚠️ CORRECTION : Utiliser reservation_id au lieu de reservationId
+    const reservation = await Reservation.findById(reservation_id);
     if (!reservation) {
       return res.status(404).json({ message: 'Réservation non trouvée' });
     }
