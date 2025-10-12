@@ -1,27 +1,30 @@
 const express = require('express');
+const { 
+  creerReservation, 
+  getReservations, 
+  getDetailsReservation,
+  getArriveesAujourdhui, 
+  getDepartsAujourdhui,
+  getReservationsEnCours,
+  annulerReservation,
+  mettreAJourPaiement,
+  verifierSecuriteOccupation
+} = require('../controllers/reservationController');
+const { authentifierToken, autoriser } = require('../middleware/authMiddleware');
+
 const router = express.Router();
-const pool = require('../config/database');
 
-router.post('/', async (req, res) => {
-  const { room_id, client_name, client_email, check_in, check_out } = req.body;
+// Routes de consultation
+router.get('/', authentifierToken, autoriser(['super_admin', 'admin_hotel', 'reception']), getReservations);
+router.get('/arrivees-aujourdhui', authentifierToken, autoriser(['super_admin', 'admin_hotel', 'reception']), getArriveesAujourdhui);
+router.get('/departs-aujourdhui', authentifierToken, autoriser(['super_admin', 'admin_hotel', 'reception']), getDepartsAujourdhui);
+router.get('/en-cours', authentifierToken, autoriser(['super_admin', 'admin_hotel', 'reception']), getReservationsEnCours);
+router.get('/securite-occupation/:hotelId?', authentifierToken, autoriser(['super_admin', 'admin_hotel', 'reception']), verifierSecuriteOccupation);
+router.get('/:id', authentifierToken, getDetailsReservation);
 
-  try {
-    // Enregistrer la réservation
-    await pool.query(
-      'INSERT INTO reservations (room_id, client_name, client_email, check_in, check_out) VALUES (?, ?, ?, ?, ?)',
-      [room_id, client_name, client_email, check_in, check_out]
-    );
-
-    // Mettre à jour la disponibilité
-    await pool.query(
-      'UPDATE rooms SET availability = ? WHERE id = ?',
-      ['Réservée', room_id]
-    );
-
-    res.status(201).json({ message: 'Réservation confirmée' });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
+// Routes d'action
+router.post('/', authentifierToken, creerReservation);
+router.patch('/:id/annuler', authentifierToken, annulerReservation);
+router.patch('/:id/paiement', authentifierToken, autoriser(['super_admin', 'admin_hotel', 'reception']), mettreAJourPaiement);
 
 module.exports = router;
