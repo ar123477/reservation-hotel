@@ -1,8 +1,7 @@
-﻿// src/pages/HotelDetails.js - VERSION DÉBOGAGE
+﻿// src/pages/HotelDetails.js - VERSION CORRIGÉE SANS ERREUR
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { hotelsAPI, roomsAPI } from '../services/api';
-import { useApiData } from '../hooks/useApiData';
 import { adaptHotelData, adaptRoomData } from '../utils/dataAdapter';
 import ImageCarousel from '../components/common/ImageCarousel';
 import RoomCard from '../components/hotel/RoomCard';
@@ -10,31 +9,38 @@ import RoomCard from '../components/hotel/RoomCard';
 const HotelDetails = () => {
   const { id } = useParams();
   const [activeTab, setActiveTab] = useState('chambres');
-  console.log('HotelDetails - ID:', id);
+  const [hotel, setHotel] = useState(null);
+  const [rooms, setRooms] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Charger les données de l'hôtel
-  const { data: hotel, loading: hotelLoading, error: hotelError } = useApiData(
-    () => hotelsAPI.getById(id),
-    adaptHotelData
-  );
+  useEffect(() => {
+    const loadData = async () => {
+      try {
+        setLoading(true);
+        
+        const hotelData = await hotelsAPI.getById(id);
+        setHotel(adaptHotelData(hotelData));
+        
+        const roomsData = await roomsAPI.getByHotel(id);
+        setRooms(roomsData.map(adaptRoomData));
+        
+      } catch (err) {
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Charger les chambres de l'hôtel
-  const { data: rooms, loading: roomsLoading, error: roomsError } = useApiData(
-    () => roomsAPI.getByHotel(id),
-    (backendData) => {
-      console.log('Chambres brutes:', backendData);
-      const adapted = backendData.map(adaptRoomData);
-      console.log('Chambres adaptées:', adapted);
-      return adapted;
-    }
-  );
+    loadData();
+  }, [id]);
 
-  console.log('Hotel data:', hotel);
-  console.log('Rooms data:', rooms);
-  console.log('Hotel loading:', hotelLoading, 'Error:', hotelError);
-  console.log('Rooms loading:', roomsLoading, 'Error:', roomsError);
+  const defaultImages = [
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&h=300&fit=crop',
+    'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=500&h=300&fit=crop'
+  ];
 
-  if (hotelLoading) {
+  if (loading) {
     return (
       <div className="container">
         <div className="loading">Chargement de l'hôtel...</div>
@@ -42,22 +48,15 @@ const HotelDetails = () => {
     );
   }
 
-  if (hotelError || !hotel) {
+  if (error || !hotel) {
     return (
       <div className="container">
         <div className="error-message">
-          Erreur: {hotelError || 'Hôtel non trouvé'}
-          <br />
-          ID recherché: {id}
+          Erreur: {error || 'Hôtel non trouvé'}
         </div>
       </div>
     );
   }
-
-  const defaultImages = [
-    'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&h=300&fit=crop',
-    'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=500&h=300&fit=crop'
-  ];
 
   return (
     <div className="hotel-details-page">
@@ -86,9 +85,10 @@ const HotelDetails = () => {
               <span className="period">par nuit</span>
             </div>
             
+            {/* BOUTON CORRIGÉ - PAS DE SCROLLINTOVIEW */}
             <button 
               className="btn-primary"
-              onClick={() => document.getElementById('chambres-section').scrollIntoView()}
+              onClick={() => setActiveTab('chambres')}
             >
               Voir les Chambres Disponibles
             </button>
@@ -120,22 +120,17 @@ const HotelDetails = () => {
         {/* Contenu des onglets */}
         <div className="tab-content">
           {activeTab === 'chambres' && (
-            <section id="chambres-section" className="rooms-section">
-              <h2>Nos Types de Chambres</h2>
+            <section className="rooms-section">
+              <h2>Chambres disponibles</h2>
               
-              {roomsLoading ? (
-                <div className="loading">Chargement des chambres...</div>
-              ) : roomsError ? (
-                <div className="error-message">Erreur chambres: {roomsError}</div>
-              ) : rooms && rooms.length > 0 ? (
+              {rooms.length > 0 ? (
                 <div className="rooms-grid">
                   {rooms.map(room => (
-                    <div key={room.id}>
-                      <RoomCard 
-                        room={room}
-                        hotel={hotel}
-                      />
-                    </div>
+                    <RoomCard 
+                      key={room.id}
+                      room={room}
+                      hotel={hotel}
+                    />
                   ))}
                 </div>
               ) : (

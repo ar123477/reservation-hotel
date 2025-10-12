@@ -1,4 +1,4 @@
-// src/pages/Home.js - CORRIGÉ POUR LA BONNE SIGNATURE
+// src/pages/Home.js - CORRECTION DU PROBLÈME SLICE
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useApiData } from '../hooks/useApiData';
@@ -7,14 +7,14 @@ import { adaptHotelData } from '../utils/dataAdapter';
 import HotelCard from '../components/hotel/HotelCard';
 
 const Home = () => {
-  // CORRECTION : Utiliser la signature attendue par useApiData
+  // Chargement des hôtels
   const { data: hotels, loading, error } = useApiData(
-    hotelsAPI.getAll,      // Référence directe à la fonction
-    adaptHotelData,        // Adaptateur simple
-    []                     // Dépendances
+    () => hotelsAPI.getAll(),
+    (backendData) => backendData.map(adaptHotelData)
   );
 
-  const featuredHotels = hotels ? hotels.slice(0, 3) : [];
+  // CORRECTION : S'assurer que featuredHotels est toujours un tableau
+  const featuredHotels = Array.isArray(hotels) ? hotels.slice(0, 3) : [];
 
   if (loading) {
     return (
@@ -74,7 +74,7 @@ const Home = () => {
             </div>
             <div className="section-cta">
               <Link to="/hotels" className="btn-outline">
-                Voir Tous les Hôtels ({hotels ? hotels.length : 0})
+                Voir Tous les Hôtels ({Array.isArray(hotels) ? hotels.length : 0})
               </Link>
             </div>
           </div>
