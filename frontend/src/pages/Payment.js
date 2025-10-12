@@ -1,6 +1,7 @@
 // src/pages/Payment.js
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { paymentsAPI } from '../services/api';
 import PaymentMethod from '../components/payment/PaymentMethod';
 import PaymentStatus from '../components/payment/PaymentStatus';
 
@@ -21,36 +22,33 @@ const Payment = () => {
     setProcessing(true);
     
     try {
-      // Simulation d'envoi à l'API
-      const response = await fetch('/api/reservations', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
+      const paymentData = {
+        reservation_id: reservation.id,
+        montant: reservation.montantTotal,
+        methode: statutPaiement === 'paye_online' ? 'carte' : 'sur_place',
+        statut: statutPaiement
+      };
+
+      if (statutPaiement === 'paye_online') {
+        // Traitement du paiement en ligne
+        await paymentsAPI.processPayment(paymentData);
+      }
+
+      setPaymentStatus({
+        success: true,
+        reservation: {
           ...reservation,
           statut_paiement: statutPaiement,
-          date_creation: new Date().toISOString()
-        })
+          numero_reservation: `HTL-${Date.now()}`
+        },
+        message: statutPaiement === 'paye_online' 
+          ? 'Paiement confirmé ! Votre réservation est validée.' 
+          : 'Réservation confirmée ! Vous paierez sur place.'
       });
-
-      if (response.ok) {
-        const result = await response.json();
-        setPaymentStatus({
-          success: true,
-          reservation: result.reservation,
-          message: statutPaiement === 'paye_online' 
-            ? 'Paiement confirmé ! Votre réservation est validée.' 
-            : 'Réservation confirmée ! Vous paierez sur place.'
-        });
-      } else {
-        throw new Error('Erreur lors de la réservation');
-      }
     } catch (error) {
       setPaymentStatus({
         success: false,
-        message: 'Une erreur est survenue. Veuillez réessayer.'
+        message: `Erreur: ${error.message}`
       });
     } finally {
       setProcessing(false);
@@ -104,7 +102,9 @@ const Payment = () => {
                 <h4>Hôtel</h4>
                 <p className="hotel-name">{reservation.hotel.nom}</p>
                 <p className="hotel-address">{reservation.hotel.adresse}</p>
-                <p className="hotel-phone">{reservation.hotel.telephone}</p>
+                {reservation.hotel.telephone && (
+                  <p className="hotel-phone">{reservation.hotel.telephone}</p>
+                )}
               </div>
 
               <div className="summary-section">
@@ -141,11 +141,6 @@ const Payment = () => {
                   <span className="amount">{reservation.montantTotal.toLocaleString()} FCFA</span>
                   <span className="taxes">Toutes taxes comprises</span>
                 </div>
-              </div>
-
-              <div className="security-badge">
-                <span className="lock-icon">🔒</span>
-                <span>Paiement 100% sécurisé</span>
               </div>
             </div>
           </div>

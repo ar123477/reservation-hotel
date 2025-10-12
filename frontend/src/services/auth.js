@@ -1,5 +1,6 @@
 // src/services/auth.js
 import { createContext, useContext, useState, useEffect } from 'react';
+import { authAPI } from './api';
 
 const AuthContext = createContext();
 
@@ -15,19 +16,12 @@ export const AuthProvider = ({ children }) => {
     try {
       const token = localStorage.getItem('token');
       if (token) {
-        const response = await fetch('/api/auth/me', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-        } else {
-          localStorage.removeItem('token');
-        }
+        const userData = await authAPI.getProfile();
+        setUser(userData);
       }
     } catch (error) {
       console.error('Erreur vérification auth:', error);
+      localStorage.removeItem('token');
     } finally {
       setLoading(false);
     }
@@ -35,45 +29,23 @@ export const AuthProvider = ({ children }) => {
 
   const login = async (email, password) => {
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (response.ok) {
-        const { token, user } = await response.json();
-        localStorage.setItem('token', token);
-        setUser(user);
-        return { success: true };
-      } else {
-        const error = await response.json();
-        return { success: false, message: error.message };
-      }
+      const result = await authAPI.login(email, password);
+      localStorage.setItem('token', result.token);
+      setUser(result.user);
+      return { success: true };
     } catch (error) {
-      return { success: false, message: 'Erreur de connexion' };
+      return { success: false, message: error.message };
     }
   };
 
   const register = async (userData) => {
     try {
-      const response = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData)
-      });
-
-      if (response.ok) {
-        const { token, user } = await response.json();
-        localStorage.setItem('token', token);
-        setUser(user);
-        return { success: true };
-      } else {
-        const error = await response.json();
-        return { success: false, message: error.message };
-      }
+      const result = await authAPI.register(userData);
+      localStorage.setItem('token', result.token);
+      setUser(result.user);
+      return { success: true };
     } catch (error) {
-      return { success: false, message: 'Erreur d\'inscription' };
+      return { success: false, message: error.message };
     }
   };
 
