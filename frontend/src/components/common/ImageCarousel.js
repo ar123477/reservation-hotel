@@ -1,18 +1,24 @@
-﻿// src/components/common/ImageCarousel.js
+﻿
+// src/components/common/ImageCarousel.js - VERSION ROBUSTE
 import React, { useState } from 'react';
 
 const ImageCarousel = ({ images, alt }) => {
   const [currentIndex, setCurrentIndex] = useState(0);
 
+  // S'assurer que images est toujours un tableau
+  const safeImages = Array.isArray(images) && images.length > 0 ? images : [
+    'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&h=300&fit=crop'
+  ];
+
   const nextImage = () => {
     setCurrentIndex((prevIndex) => 
-      prevIndex === images.length - 1 ? 0 : prevIndex + 1
+      prevIndex === safeImages.length - 1 ? 0 : prevIndex + 1
     );
   };
 
   const prevImage = () => {
     setCurrentIndex((prevIndex) => 
-      prevIndex === 0 ? images.length - 1 : prevIndex - 1
+      prevIndex === 0 ? safeImages.length - 1 : prevIndex - 1
     );
   };
 
@@ -20,22 +26,23 @@ const ImageCarousel = ({ images, alt }) => {
     setCurrentIndex(index);
   };
 
-  // Gestion des erreurs d'image
+  // Gestion robuste des erreurs d'image
   const handleImageError = (e) => {
-    e.target.src = '/images/default-hotel.jpg';
+    console.error('Image failed to load:', e.target.src);
+    e.target.src = 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=500&h=300&fit=crop';
   };
 
   return (
     <div className="image-carousel">
       <div className="carousel-container">
         <img 
-          src={images[currentIndex]} 
+          src={safeImages[currentIndex]} 
           alt={`${alt} - Image ${currentIndex + 1}`}
           onError={handleImageError}
           className="carousel-image"
         />
         
-        {images.length > 1 && (
+        {safeImages.length > 1 && (
           <>
             <button 
               className="carousel-btn prev-btn" 
@@ -53,7 +60,7 @@ const ImageCarousel = ({ images, alt }) => {
             </button>
             
             <div className="carousel-indicators">
-              {images.map((_, index) => (
+              {safeImages.map((_, index) => (
                 <button
                   key={index}
                   className={`indicator ${index === currentIndex ? 'active' : ''}`}
@@ -64,7 +71,7 @@ const ImageCarousel = ({ images, alt }) => {
             </div>
             
             <div className="carousel-counter">
-              {currentIndex + 1} / {images.length}
+              {currentIndex + 1} / {safeImages.length}
             </div>
           </>
         )}
@@ -74,3 +81,4 @@ const ImageCarousel = ({ images, alt }) => {
 };
 
 export default ImageCarousel;
+

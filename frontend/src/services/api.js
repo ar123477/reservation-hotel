@@ -1,4 +1,4 @@
-﻿// src/services/api.js - AJOUT DES FONCTIONS MANQUANTES
+﻿// src/services/api.js - CORRECTION DES FONCTIONS ROOMS
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000';
 
 // Données mock pour le développement avec vraies images
@@ -155,16 +155,17 @@ export const hotelsAPI = {
   }
 };
 
-// API des chambres
+// API des chambres - CORRECTION DES FONCTIONS
 export const roomsAPI = {
   async getRoomsByHotel(hotelId) {
     await new Promise(resolve => setTimeout(resolve, 300));
     return mockRooms[parseInt(hotelId)] || [];
   },
 
-  // ALIAS pour compatibilité
+  // CORRECTION : Cette fonction doit être définie correctement
   async getByHotel(hotelId) {
-    return this.getRoomsByHotel(hotelId);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    return mockRooms[parseInt(hotelId)] || [];
   }
 };
 
