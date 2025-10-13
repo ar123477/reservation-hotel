@@ -1,6 +1,7 @@
 // src/pages/SuperAdminDashboard.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/auth';
+import { hotelsAPI } from '../services/api';
 
 // Composants super admin
 import GlobalOverview from '../components/superadmin/GlobalOverview';
@@ -21,95 +22,44 @@ const SuperAdminDashboard = () => {
 
   const loadGlobalData = async () => {
     try {
-      // Simulation données multi-hôtels
-      const mockData = {
+      const hotels = await hotelsAPI.getHotels();
+      const mappedHotels = (hotels || []).map(h => ({
+        id: h.id,
+        nom: h.nom,
+        ville: h.ville || '',
+        statut: h.statut || 'actif',
+        totalChambres: h.total_chambres || 0,
+        tauxOccupation: parseFloat(h.taux_occupation || 0),
+        chiffreAffaires: h.chiffre_affaires || 0,
+        administrateur: h.admin_email || '',
+        dateCreation: h.date_creation || ''
+      }));
+
+      const totalHotels = mappedHotels.length;
+      const activeHotels = mappedHotels.filter(h => h.statut === 'actif').length;
+      const totalChambres = mappedHotels.reduce((s, h) => s + (h.totalChambres || 0), 0);
+      const tauxOccupationGlobal = Math.round((mappedHotels.reduce((s, h) => s + (h.tauxOccupation || 0), 0) / (totalHotels || 1)) || 0);
+      const chiffreAffairesTotal = mappedHotels.reduce((s, h) => s + (h.chiffreAffaires || 0), 0);
+
+      setGlobalData({
         globalStats: {
-          totalHotels: 4,
-          activeHotels: 3,
-          totalChambres: 130,
-          tauxOccupationGlobal: 72,
-          chiffreAffairesTotal: 82300000,
-          reservationsTotal: 892,
-          revenuMoyenGlobal: 95200
+          totalHotels,
+          activeHotels,
+          totalChambres,
+          tauxOccupationGlobal,
+          chiffreAffairesTotal,
+          reservationsTotal: 0,
+          revenuMoyenGlobal: 0
         },
-        hotels: [
-          {
-            id: 1,
-            nom: "Hôtel Sarakawa",
-            ville: "Lomé",
-            statut: "actif",
-            totalChambres: 60,
-            tauxOccupation: 78,
-            chiffreAffaires: 29900000,
-            administrateur: "admin@sarakawa.tg",
-            dateCreation: "2023-01-15"
-          },
-          {
-            id: 2,
-            nom: "Hôtel du 2 Février", 
-            ville: "Lomé",
-            statut: "actif",
-            totalChambres: 35,
-            tauxOccupation: 68,
-            chiffreAffaires: 18700000,
-            administrateur: "admin@2fevrier.tg",
-            dateCreation: "2023-03-10"
-          },
-          {
-            id: 3,
-            nom: "Hôtel Palm Beach",
-            ville: "Lomé", 
-            statut: "actif",
-            totalChambres: 20,
-            tauxOccupation: 65,
-            chiffreAffaires: 12500000,
-            administrateur: "admin@palmbeach.tg",
-            dateCreation: "2023-06-22"
-          },
-          {
-            id: 4,
-            nom: "Hôtel Concorde",
-            ville: "Kara",
-            statut: "inactif",
-            totalChambres: 15,
-            tauxOccupation: 0,
-            chiffreAffaires: 0,
-            administrateur: "",
-            dateCreation: "2024-01-08"
-          }
-        ],
-        performanceComparison: [
-          {
-            metrique: "Taux d'occupation",
-            sarakawa: 78,
-            deuxFevrier: 68, 
-            palmBeach: 65,
-            moyenne: 70
-          },
-          {
-            metrique: "Revenu par chambre",
-            sarakawa: 498333,
-            deuxFevrier: 534286,
-            palmBeach: 625000,
-            moyenne: 552540
-          },
-          {
-            metrique: "Réservations directes",
-            sarakawa: 65,
-            deuxFevrier: 58, 
-            palmBeach: 52,
-            moyenne: 58
-          }
-        ],
+        hotels: mappedHotels,
+        performanceComparison: [],
         systemSettings: {
           commissionPlateforme: 8,
           periodeEssaiGratuite: 30,
           supportTelephone: "+223 70 12 34 56",
           emailSupport: "support@hotelstogo.tg"
         }
-      };
-
-      setGlobalData(mockData);
+      });
     } catch (error) {
       console.error('Erreur chargement données super admin:', error);
     } finally {

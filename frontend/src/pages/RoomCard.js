@@ -1,18 +1,17 @@
-// src/components/hotel/RoomCard.js
 import React from 'react';
 import { Link } from 'react-router-dom';
 
-const RoomCard = ({ room, hotel, onSelect }) => {
+const RoomCard = ({ room, hotel }) => {
   return (
     <div className="room-card">
       <div className="room-image">
-        <img src={room.image} alt={room.type} />
+        <img src={room.image} alt={room.type_chambre} />
       </div>
-      
+
       <div className="room-content">
-        <h3>{room.type}</h3>
+        <h3>{room.type_chambre}</h3>
         <p className="room-size">{room.superficie} • {room.capacite}</p>
-        
+
         <div className="room-features">
           {room.equipements.slice(0, 3).map((feature, index) => (
             <span key={index} className="feature-tag">{feature}</span>
@@ -21,7 +20,7 @@ const RoomCard = ({ room, hotel, onSelect }) => {
             <span className="feature-tag">+{room.equipements.length - 3} autres</span>
           )}
         </div>
-        
+
         <div className="room-pricing">
           <div className="pricing-option">
             <span className="price-label">À la nuitée:</span>
@@ -32,7 +31,7 @@ const RoomCard = ({ room, hotel, onSelect }) => {
             <span className="price">{room.prix_heure.toLocaleString()} FCFA</span>
           </div>
         </div>
-        
+
         <div className="room-actions">
           <Link 
             to={`/reservation?hotel=${hotel.id}&room=${room.id}&type=classique`}

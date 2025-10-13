@@ -1,15 +1,22 @@
-// src/components/reservation/DateSelector.js
 import React, { useState } from 'react';
 
-const DateSelector = ({ type, onDatesChange, selectedDates }) => {
-  const [arrivee, setArrivee] = useState(selectedDates.arrivee);
-  const [depart, setDepart] = useState(selectedDates.depart);
-  const [heures, setHeures] = useState(selectedDates.heures);
+const DateSelector = ({ type, onDatesChange, selectedDates = {} }) => {
+  // Sécuriser les valeurs par défaut
+  const defaultDates = {
+    arrivee: '',
+    depart: '',
+    heures: 0,
+    ...selectedDates
+  };
+
+  const [arrivee, setArrivee] = useState(defaultDates.arrivee);
+  const [depart, setDepart] = useState(defaultDates.depart);
+  const [heures, setHeures] = useState(defaultDates.heures);
 
   const handleArriveeChange = (e) => {
     const newArrivee = e.target.value;
     setArrivee(newArrivee);
-    
+
     if (type === 'horaire') {
       onDatesChange({ arrivee: newArrivee, depart: '', heures });
     } else if (depart) {
@@ -35,21 +42,21 @@ const DateSelector = ({ type, onDatesChange, selectedDates }) => {
 
   const getMinTime = () => {
     if (!arrivee) return '00:00';
-    
+
     const now = new Date();
     const selectedDate = new Date(arrivee);
-    
+
     if (selectedDate.toDateString() === now.toDateString()) {
       return now.toTimeString().slice(0, 5);
     }
-    
+
     return '00:00';
   };
 
   return (
     <div className="date-selector">
       <h3>Dates et horaires</h3>
-      
+
       {type === 'horaire' ? (
         <div className="hourly-selection">
           <div className="form-row">
@@ -57,18 +64,18 @@ const DateSelector = ({ type, onDatesChange, selectedDates }) => {
               <label>Date d'arrivée</label>
               <input
                 type="date"
-                value={arrivee}
+                value={arrivee.split('T')[0] || ''}
                 onChange={handleArriveeChange}
                 min={getMinDate()}
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label>Heure d'arrivée</label>
               <input
                 type="time"
-                value={arrivee ? arrivee.split('T')[1]?.slice(0, 5) || '12:00' : ''}
+                value={arrivee.includes('T') ? arrivee.split('T')[1]?.slice(0, 5) || '12:00' : ''}
                 onChange={(e) => {
                   const newDateTime = `${arrivee.split('T')[0]}T${e.target.value}`;
                   setArrivee(newDateTime);
@@ -106,7 +113,7 @@ const DateSelector = ({ type, onDatesChange, selectedDates }) => {
                 required
               />
             </div>
-            
+
             <div className="form-group">
               <label>Date de départ</label>
               <input
@@ -118,11 +125,11 @@ const DateSelector = ({ type, onDatesChange, selectedDates }) => {
               />
             </div>
           </div>
-          
+
           {arrivee && depart && (
             <div className="stay-duration">
               <span>
-                Durée du séjour: {Math.ceil((new Date(depart) - new Date(arrivee)) / (1000 * 60 * 60 * 24))} nuit(s)
+                Durée du séjour : {Math.ceil((new Date(depart) - new Date(arrivee)) / (1000 * 60 * 60 * 24))} nuit(s)
               </span>
             </div>
           )}

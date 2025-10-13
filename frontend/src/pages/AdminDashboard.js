@@ -1,6 +1,7 @@
 // src/pages/AdminDashboard.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/auth';
+import { hotelsAPI, reservationsAPI } from '../services/api';
 
 // Composants administration
 import AdminOverview from '../components/admin/AdminOverview';
@@ -22,88 +23,40 @@ const AdminDashboard = () => {
 
   const loadHotelData = async () => {
     try {
-      // Simulation des données hôtel
-      const mockData = {
+      const hotelId = user?.hotel_id;
+      const [occupation] = await Promise.all([
+        hotelsAPI.getOccupation(hotelId)
+      ]);
+
+      const mapped = {
         hotel: {
-          id: 1,
-          nom: "Hôtel Sarakawa",
-          adresse: "Boulevard du Mono, Lomé",
-          telephone: "+223 22 21 45 00",
-          email: "reservation@sarakawa.tg",
-          statut: "actif",
-          total_chambres: 60
+          id: hotelId || 0,
+          nom: user?.hotel_nom || 'Mon Hôtel',
+          adresse: user?.hotel_adresse || '',
+          telephone: user?.hotel_telephone || '',
+          email: user?.hotel_email || '',
+          statut: 'actif',
+          total_chambres: occupation.total_chambres || 0
         },
         stats: {
-          taux_occupation: 78,
-          chiffre_affaires: 29900000,
-          reservations_directes: 65,
-          revenu_moyen: 99700,
-          reservations_mois: 245,
-          revenu_mois: 24450000
+          taux_occupation: parseFloat(occupation.taux_occupation || 0),
+          chiffre_affaires: 0,
+          reservations_directes: 0,
+          revenu_moyen: 0,
+          reservations_mois: 0,
+          revenu_mois: 0
         },
-        pricing: {
-          horaire: [
-            {
-              type: "Suite Junior",
-              creneaux: [
-                { duree: 2, prix: 39400 },
-                { duree: 4, prix: 59000 },
-                { duree: 6, prix: 78700 },
-                { duree: 8, prix: 98400 }
-              ]
-            },
-            {
-              type: "Appartement Standard", 
-              creneaux: [
-                { duree: 2, prix: 26200 },
-                { duree: 4, prix: 42600 },
-                { duree: 6, prix: 55700 },
-                { duree: 8, prix: 65600 }
-              ]
-            }
-          ],
-          classique: [
-            {
-              type: "Suite Junior",
-              lundi_jeudi: 118100,
-              vendredi_dimanche: 164000
-            },
-            {
-              type: "Appartement Standard",
-              lundi_jeudi: 78700,
-              vendredi_dimanche: 105000
-            }
-          ]
-        },
+        pricing: { horaire: [], classique: [] },
         security: {
           buffer_heures: 1,
-          chambre_joker: "999",
+          chambre_joker: '999',
           seuil_alerte: 90,
           notifications_actives: true
         },
-        staff: [
-          {
-            id: 1,
-            nom: "DUPONT",
-            prenom: "Marie",
-            email: "marie.dupont@sarakawa.tg",
-            role: "reception",
-            statut: "actif",
-            date_embauche: "2023-01-15"
-          },
-          {
-            id: 2,
-            nom: "KOFFI",
-            prenom: "Jean",
-            email: "jean.koffi@sarakawa.tg", 
-            role: "menage",
-            statut: "actif",
-            date_embauche: "2023-03-20"
-          }
-        ]
+        staff: []
       };
 
-      setHotelData(mockData);
+      setHotelData(mapped);
     } catch (error) {
       console.error('Erreur chargement données admin:', error);
     } finally {

@@ -43,13 +43,16 @@ const simulerPaiementEnLigne = async (req, res) => {
       await Reservation.updatePaymentStatus(reservation_id, 'paye_online');
     }
 
+    const numeroReservation = await Reservation.generateReservationNumber(reservation.hotel_id, reservation.id);
+
     res.json({
       succes: resultatPaiement.succes,
       message: resultatPaiement.message,
       numero_transaction: resultatPaiement.numero_transaction,
       statut: resultatPaiement.statut,
       reservation_id: reservation_id,
-      montant: reservation.montant_total
+      montant: reservation.montant_total,
+      numero_reservation: numeroReservation
     });
 
   } catch (erreur) {
@@ -88,12 +91,15 @@ const confirmerPaiementSurPlace = async (req, res) => {
       }
     });
 
+    const numeroReservation = await Reservation.generateReservationNumber(reservation.hotel_id, reservation.id);
+
     res.json({
       message: 'Réservation confirmée avec paiement sur place',
       reservation_id: reservation_id,
       numero_transaction: `PLACE-${transactionId}`,
       statut: 'a_payer_sur_place',
-      montant: reservation.montant_total
+      montant: reservation.montant_total,
+      numero_reservation: numeroReservation
     });
 
   } catch (erreur) {

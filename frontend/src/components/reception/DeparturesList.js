@@ -1,5 +1,6 @@
 // src/components/reception/DeparturesList.js
 import React from 'react';
+import { receptionAPI } from '../../services/api';
 
 const DeparturesList = ({ departs, detailed = false }) => {
   const getPaymentStatus = (statut) => {
@@ -15,14 +16,24 @@ const DeparturesList = ({ departs, detailed = false }) => {
     }
   };
 
-  const handleCheckOut = (departId) => {
-    // Logique de départ
-    console.log(`Enregistrer départ ${departId}`);
+  const handleCheckOut = async (departId) => {
+    try {
+      await receptionAPI.enregistrerDepart({ reservation_id: departId });
+      window.location.reload();
+    } catch (e) {
+      alert(`Erreur: ${e.message}`);
+    }
   };
 
-  const handleGenerateInvoice = (departId) => {
-    // Logique de génération de facture
-    console.log(`Générer facture pour ${departId}`);
+  const handleGenerateInvoice = async (departId) => {
+    try {
+      const res = await receptionAPI.genererFacture(departId);
+      // Idéalement ouvrir un modal / télécharger PDF
+      alert('Facture générée');
+      console.log(res);
+    } catch (e) {
+      alert(`Erreur: ${e.message}`);
+    }
   };
 
   return (

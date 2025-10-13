@@ -1,5 +1,4 @@
-﻿// src/App.js - AVEC AUTHENTIFICATION MOCK
-import React from 'react';
+﻿import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './services/auth';
 
@@ -13,10 +12,12 @@ import Reservation from './pages/Reservation';
 import Payment from './pages/Payment';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import Identification from './pages/Identification'; // ✅ ajout ici
 
 // Composants
 import Header from './components/common/Header';
 import Footer from './components/common/Footer';
+import ChoixPaiement from './pages/ChoixPaiement';
 
 // Styles
 import './styles/globals.css';
@@ -49,20 +50,15 @@ function App() {
               <Route path="/hotels" element={<Hotels />} />
               <Route path="/hotel/:id" element={<HotelDetails />} />
               <Route path="/about" element={<div>À propos</div>} />
+              <Route path="/identification" element={<Identification />} /> {/* ✅ route ajoutée */}
+              <Route path="/choix-paiement" element={<ChoixPaiement />} />
 
               {/* Auth */}
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
 
               {/* Routes protégées */}
-              <Route
-                path="/reservation"
-                element={
-                  <ProtectedRoute>
-                    <Reservation />
-                  </ProtectedRoute>
-                }
-              />
+              <Route path="/reservation" element={<Reservation />} />
               <Route
                 path="/payment"
                 element={
@@ -100,3 +96,4 @@ function App() {
 }
 
 export default App;
+

@@ -115,6 +115,12 @@ const HotelDetails = () => {
           >
             🏊 Équipements
           </button>
+          <button 
+            className={activeTab === 'carte' ? 'active' : ''}
+            onClick={() => setActiveTab('carte')}
+          >
+            🗺️ Carte
+          </button>
         </nav>
 
         {/* Contenu des onglets */}
@@ -158,6 +164,30 @@ const HotelDetails = () => {
                     <span>{amenity}</span>
                   </div>
                 ))}
+              </div>
+            </section>
+          )}
+
+          {activeTab === 'carte' && (
+            <section className="map-section">
+              <h2>Localisation</h2>
+              <div className="map-container" style={{ height: '380px', borderRadius: 12, overflow: 'hidden' }}>
+                {hotel?.adresse ? (
+                  <iframe
+                    title="Carte de l'hôtel"
+                    width="100%"
+                    height="100%"
+                    style={{ border: 0 }}
+                    loading="lazy"
+                    allowFullScreen
+                    referrerPolicy="no-referrer-when-downgrade"
+                    src={`https://www.google.com/maps?q=${encodeURIComponent(hotel.adresse)}&output=embed`}
+                  />
+                ) : (
+                  <div className="map-fallback">
+                    Adresse indisponible
+                  </div>
+                )}
               </div>
             </section>
           )}

@@ -1,9 +1,9 @@
-// src/pages/Payment.js
 import React, { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { paymentsAPI } from '../services/api';
 import PaymentMethod from '../components/payment/PaymentMethod';
 import PaymentStatus from '../components/payment/PaymentStatus';
+import { sendConfirmationEmail } from '../utils/sendConfirmationEmail'; // ✅ Intégration EmailJS
 
 const Payment = () => {
   const location = useLocation();
@@ -22,25 +22,25 @@ const Payment = () => {
     setProcessing(true);
     
     try {
-      const paymentData = {
-        reservation_id: reservation.id,
-        montant: reservation.montantTotal,
-        methode: statutPaiement === 'paye_online' ? 'carte' : 'sur_place',
-        statut: statutPaiement
+      let numeroFromBackend = reservation.numero_reservation;
+      if (statutPaiement === 'paye_online') {
+        const resp = await paymentsAPI.payOnline({ reservation_id: reservation.id, details_carte: {} });
+        numeroFromBackend = resp.numero_reservation || numeroFromBackend;
+      }
+
+      const numero = numeroFromBackend || `HTL-${Date.now()}`;
+      const updatedReservation = {
+        ...reservation,
+        statut_paiement: statutPaiement,
+        numero_reservation: numero
       };
 
-      if (statutPaiement === 'paye_online') {
-        // Traitement du paiement en ligne
-        await paymentsAPI.processPayment(paymentData);
-      }
+      // ✅ Envoi de l'email de confirmation via EmailJS
+      await sendConfirmationEmail(updatedReservation);
 
       setPaymentStatus({
         success: true,
-        reservation: {
-          ...reservation,
-          statut_paiement: statutPaiement,
-          numero_reservation: `HTL-${Date.now()}`
-        },
+        reservation: updatedReservation,
         message: statutPaiement === 'paye_online' 
           ? 'Paiement confirmé ! Votre réservation est validée.' 
           : 'Réservation confirmée ! Vous paierez sur place.'

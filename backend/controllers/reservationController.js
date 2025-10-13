@@ -31,6 +31,17 @@ const creerReservation = async (req, res) => {
       });
     }
 
+    // Contrôle anti-sur-réservation additionnel: si occupation > 90% et pas de chambre joker disponible, bloquer
+    const occupation = await Hotel.getTauxOccupation(hotel_id);
+    const jokerDisponible = await Hotel.checkChambreJoker(hotel_id);
+    const taux = parseFloat(occupation.taux_occupation || 0);
+    if (taux > 90 && !jokerDisponible) {
+      return res.status(409).json({
+        message: 'Capacité presque pleine: impossible de créer une réservation (aucune chambre joker disponible)',
+        details: { taux_occupation: occupation.taux_occupation, chambre_joker_disponible: jokerDisponible }
+      });
+    }
+
     // Calculer le montant total en FCFA
     let montantTotal = 0;
     const dateArrivee = new Date(date_arrivee);
@@ -68,7 +79,7 @@ const creerReservation = async (req, res) => {
       type_reservation,
       informations_client,
       methode_paiement,
-      statut_paiement,
+      statut_paiement: statutPaiement,
       montant_total: montantTotal
     });
 

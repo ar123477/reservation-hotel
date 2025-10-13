@@ -1,6 +1,6 @@
 // src/components/reception/ArrivalsList.js
 import React, { useState } from 'react';
-import { reservationsAPI } from '../../services/api';
+import { receptionAPI } from '../../services/api';
 
 const ArrivalsList = ({ arrivees, onAssignRoom, detailed = false }) => {
   const [assigning, setAssigning] = useState(null);
@@ -29,7 +29,7 @@ const ArrivalsList = ({ arrivees, onAssignRoom, detailed = false }) => {
 
   const handleCheckIn = async (arrivalId) => {
     try {
-      await reservationsAPI.checkIn(arrivalId);
+      await receptionAPI.enregistrerArrivee({ reservation_id: arrivalId });
       // Recharger les données
       window.location.reload();
     } catch (error) {

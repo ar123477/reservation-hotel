@@ -1,4 +1,3 @@
-// src/components/hotel/RoomCard.js
 import React from 'react';
 import { Link } from 'react-router-dom';
 
@@ -37,14 +36,14 @@ const RoomCard = ({ room, hotel, onSelect }) => {
         
         <div className="room-actions">
           <Link 
-            to={`/reservation?hotel=${hotel.id}&room=${room.id}&type=classique`}
+            to={`/identification?hotel=${hotel.id}&room=${room.id}&type=classique`}
             className="btn-primary"
           >
             Réserver la nuit
           </Link>
           {room.prix_heure && (
             <Link 
-              to={`/reservation?hotel=${hotel.id}&room=${room.id}&type=horaire`}
+              to={`/identification?hotel=${hotel.id}&room=${room.id}&type=horaire`}
               className="btn-outline"
             >
               Réserver à l'heure

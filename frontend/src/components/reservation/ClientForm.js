@@ -70,15 +70,7 @@ const ClientForm = ({ client, onChange }) => {
           </select>
         </div>
 
-        <div className="form-group">
-          <label>Notes spéciales (optionnel)</label>
-          <textarea
-            value={client.notes}
-            onChange={(e) => handleChange('notes', e.target.value)}
-            placeholder="Demandes spéciales, allergies, préférences..."
-            rows="3"
-          />
-        </div>
+        
       </div>
 
       <div className="form-notice">

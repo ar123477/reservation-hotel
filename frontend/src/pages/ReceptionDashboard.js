@@ -1,6 +1,7 @@
 // src/pages/ReceptionDashboard.js
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../services/auth';
+import { reservationsAPI, receptionAPI, nettoyageAPI, hotelsAPI } from '../services/api';
 
 // Composants du dashboard
 import TodayOverview from '../components/reception/TodayOverview';
@@ -22,88 +23,30 @@ const ReceptionDashboard = () => {
 
   const loadTodayData = async () => {
     try {
-      // Simulation des données du jour
-      const mockData = {
-        date: new Date().toISOString().split('T')[0],
-        stats: {
-          totalChambres: 60,
-          disponibles: 18,
-          occupees: 35,
-          nettoyage: 7,
-          tauxOccupation: 85
-        },
-        arrivees: [
-          {
-            id: 1,
-            numero_reservation: 'HTL-1-20241215',
-            client_nom: 'DUPONT Martin',
-            chambre_numero: '305',
-            date_arrivee: '2024-12-15T14:00:00',
-            date_depart: '2024-12-18T11:00:00',
-            statut_paiement: 'paye_online',
-            statut: 'a_venir'
-          },
-          {
-            id: 2,
-            numero_reservation: 'HTL-1-20241215',
-            client_nom: 'LEROIS Sophie',
-            chambre_numero: null,
-            date_arrivee: '2024-12-15T16:00:00',
-            date_depart: '2024-12-16T12:00:00',
-            statut_paiement: 'a_payer_sur_place',
-            statut: 'a_venir'
-          }
-        ],
-        departs: [
-          {
-            id: 3,
-            numero_reservation: 'HTL-1-20241212',
-            client_nom: 'MARTIN Jean',
-            chambre_numero: '201',
-            date_arrivee: '2024-12-12T14:00:00',
-            date_depart: '2024-12-15T11:00:00',
-            statut_paiement: 'paye_online',
-            statut: 'present'
-          },
-          {
-            id: 4,
-            numero_reservation: 'HTL-1-20241213',
-            client_nom: 'FAMILLE LEROY',
-            chambre_numero: '305',
-            date_arrivee: '2024-12-13T15:00:00',
-            date_depart: '2024-12-15T11:00:00',
-            statut_paiement: 'a_payer_sur_place',
-            statut: 'present'
-          }
-        ],
-        nettoyage: [
-          {
-            id: 1,
-            chambre_numero: '101',
-            statut: 'a_nettoyer',
-            heure_depart: '2024-12-15T10:00:00',
-            priorite: 'haute'
-          },
-          {
-            id: 2,
-            chambre_numero: '102',
-            statut: 'en_cours',
-            heure_depart: '2024-12-15T10:30:00',
-            personnel: 'Marie',
-            temps_ecoule: 15
-          },
-          {
-            id: 3,
-            chambre_numero: '103',
-            statut: 'termine',
-            heure_depart: '2024-12-15T10:15:00',
-            personnel: 'Jean',
-            temps_ecoule: 20
-          }
-        ]
+      const [arrivees, departs, cleaningDash, occupation, joker] = await Promise.all([
+        reservationsAPI.getTodayArrivals(),
+        reservationsAPI.getTodayDepartures(),
+        nettoyageAPI.getTableauBord(user?.hotel_id),
+        hotelsAPI.getOccupation(user?.hotel_id),
+        hotelsAPI.getChambreJoker(user?.hotel_id)
+      ]);
+
+      const stats = {
+        totalChambres: occupation.total_chambres || 0,
+        occupees: occupation.chambres_occupees || 0,
+        disponibles: (occupation.total_chambres || 0) - (occupation.chambres_occupees || 0),
+        nettoyage: (cleaningDash?.a_nettoyer || 0) + (cleaningDash?.en_cours || 0),
+        tauxOccupation: parseFloat(occupation.taux_occupation || 0),
+        chambreJokerDisponible: !!joker
       };
 
-      setTodayData(mockData);
+      setTodayData({
+        date: new Date().toISOString().split('T')[0],
+        stats,
+        arrivees: arrivees || [],
+        departs: departs || [],
+        nettoyage: cleaningDash?.taches || []
+      });
     } catch (error) {
       console.error('Erreur chargement données:', error);
     } finally {
