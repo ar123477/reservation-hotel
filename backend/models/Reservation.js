@@ -1,201 +1,200 @@
-const db = require('../config/database');
+const pool = require('../config/database');
 
 class Reservation {
-  // Créer une réservation
-  static async create(reservationData) {
-    const {
-      hotel_id,
-      chambre_id,
-      utilisateur_id,
-      date_arrivee,
-      date_depart,
-      type_reservation,
-      informations_client,
-      methode_paiement,
-      statut_paiement,
-      montant_total
-    } = reservationData;
+    // Créer une nouvelle réservation
+    static async create(reservationData) {
+        const {
+            hotel_id, type_chambre, utilisateur_id, date_arrivee, date_depart,
+            type_reservation, duree_heures, methode_paiement, montant_total,
+            informations_client
+        } = reservationData;
 
-    const [result] = await db.execute(
-      `INSERT INTO reservations 
-       (hotel_id, chambre_id, utilisateur_id, date_arrivee, date_depart, type_reservation, informations_client, methode_paiement, statut_paiement, montant_total, statut) 
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'confirmee')`,
-      [
-        hotel_id,
-        chambre_id,
-        utilisateur_id,
-        date_arrivee,
-        date_depart,
-        type_reservation,
-        JSON.stringify(informations_client),
-        methode_paiement,
-        statut_paiement,
-        montant_total
-      ]
-    );
+        const numero_reservation = 'RES' + Date.now() + Math.random().toString(36).substr(2, 5);
+        const connection = await pool.getConnection();
+        
+        try {
+            const [result] = await connection.execute(`
+                INSERT INTO reservations (
+                    numero_reservation, hotel_id, type_chambre, utilisateur_id,
+                    date_arrivee, date_depart, type_reservation, duree_heures,
+                    informations_client, statut_paiement, methode_paiement,
+                    montant_total, statut
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'en_attente', ?, ?, 'confirmee')
+            `, [
+                numero_reservation,
+                hotel_id,
+                type_chambre,
+                utilisateur_id,
+                date_arrivee,
+                date_depart,
+                type_reservation,
+                duree_heures,
+                JSON.stringify(informations_client),
+                methode_paiement,
+                montant_total
+            ]);
 
-    return result.insertId;
-  }
-
-  // Récupérer toutes les réservations
-  static async findAll(filters = {}) {
-    let query = `
-      SELECT r.*, ch.numero_chambre, ch.type_chambre, h.nom as nom_hotel, u.nom as nom_utilisateur
-      FROM reservations r
-      LEFT JOIN chambres_hotel ch ON r.chambre_id = ch.id
-      LEFT JOIN hotels h ON r.hotel_id = h.id
-      LEFT JOIN utilisateurs u ON r.utilisateur_id = u.id
-      WHERE 1=1
-    `;
-    let params = [];
-
-    if (filters.hotel_id) {
-      query += ' AND r.hotel_id = ?';
-      params.push(filters.hotel_id);
+            return {
+                id: result.insertId,
+                numero_reservation
+            };
+        } finally {
+            connection.release();
+        }
     }
 
-    if (filters.utilisateur_id) {
-      query += ' AND r.utilisateur_id = ?';
-      params.push(filters.utilisateur_id);
+    // Récupérer les réservations d'un utilisateur
+    static async findByUserId(userId) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [reservations] = await connection.execute(`
+                SELECT r.*, h.nom as hotel_nom, c.numero_chambre 
+                FROM reservations r 
+                LEFT JOIN hotels h ON r.hotel_id = h.id 
+                LEFT JOIN chambres c ON r.chambre_id = c.id 
+                WHERE r.utilisateur_id = ? 
+                ORDER BY r.date_creation DESC
+            `, [userId]);
+
+            return reservations;
+        } finally {
+            connection.release();
+        }
     }
 
-    if (filters.statut) {
-      query += ' AND r.statut = ?';
-      params.push(filters.statut);
+    // Récupérer une réservation par ID
+    static async findById(id) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [reservations] = await connection.execute(`
+                SELECT r.*, h.nom as hotel_nom, c.numero_chambre, u.prenom, u.nom, u.email, u.telephone
+                FROM reservations r 
+                LEFT JOIN hotels h ON r.hotel_id = h.id 
+                LEFT JOIN chambres c ON r.chambre_id = c.id 
+                LEFT JOIN utilisateurs u ON r.utilisateur_id = u.id
+                WHERE r.id = ?
+            `, [id]);
+
+            return reservations[0] || null;
+        } finally {
+            connection.release();
+        }
     }
 
-    if (filters.date) {
-      query += ' AND DATE(r.date_arrivee) = ?';
-      params.push(filters.date);
+    // Récupérer les arrivées du jour pour un hôtel
+    static async getTodayArrivals(hotelId) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            
+            const [arrivals] = await connection.execute(`
+                SELECT r.*, u.prenom, u.nom, u.email, u.telephone 
+                FROM reservations r 
+                LEFT JOIN utilisateurs u ON r.utilisateur_id = u.id 
+                WHERE r.hotel_id = ? AND DATE(r.date_arrivee) = ? AND r.statut = 'confirmee'
+                ORDER BY r.date_arrivee
+            `, [hotelId, today]);
+
+            return arrivals;
+        } finally {
+            connection.release();
+        }
     }
 
-    query += ' ORDER BY r.date_creation DESC';
+    // Récupérer les départs du jour pour un hôtel
+    static async getTodayDepartures(hotelId) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const today = new Date().toISOString().split('T')[0];
+            
+            const [departures] = await connection.execute(`
+                SELECT r.*, u.prenom, u.nom, u.email, u.telephone, c.numero_chambre
+                FROM reservations r 
+                LEFT JOIN utilisateurs u ON r.utilisateur_id = u.id 
+                LEFT JOIN chambres c ON r.chambre_id = c.id
+                WHERE r.hotel_id = ? AND DATE(r.date_depart) = ? AND r.statut = 'en_cours'
+                ORDER BY r.date_depart
+            `, [hotelId, today]);
 
-    const [reservations] = await db.execute(query, params);
-    return reservations;
-  }
-
-  // Trouver une réservation par ID
-  static async findById(id) {
-    const [reservations] = await db.execute(`
-      SELECT r.*, ch.numero_chambre, ch.type_chambre, h.nom as nom_hotel, u.nom as nom_utilisateur
-      FROM reservations r
-      LEFT JOIN chambres_hotel ch ON r.chambre_id = ch.id
-      LEFT JOIN hotels h ON r.hotel_id = h.id
-      LEFT JOIN utilisateurs u ON r.utilisateur_id = u.id
-      WHERE r.id = ?
-    `, [id]);
-    
-    return reservations[0] || null;
-  }
-
-  // Mettre à jour le statut d'une réservation
-  static async updateStatus(id, status) {
-    const [result] = await db.execute(
-      'UPDATE reservations SET statut = ? WHERE id = ?',
-      [status, id]
-    );
-    
-    return result.affectedRows > 0;
-  }
-
-  // Mettre à jour le statut de paiement
-  static async updatePaymentStatus(id, paymentStatus) {
-    const [result] = await db.execute(
-      'UPDATE reservations SET statut_paiement = ? WHERE id = ?',
-      [paymentStatus, id]
-    );
-    
-    return result.affectedRows > 0;
-  }
-
-  // Obtenir les arrivées du jour
-  static async getTodayArrivals(hotelId = null) {
-    let query = `
-      SELECT r.*, ch.numero_chambre, ch.type_chambre, h.nom as nom_hotel, u.nom as nom_utilisateur
-      FROM reservations r
-      LEFT JOIN chambres_hotel ch ON r.chambre_id = ch.id
-      LEFT JOIN hotels h ON r.hotel_id = h.id
-      LEFT JOIN utilisateurs u ON r.utilisateur_id = u.id
-      WHERE DATE(r.date_arrivee) = CURDATE() 
-      AND r.statut = 'confirmee'
-    `;
-    let params = [];
-
-    if (hotelId) {
-      query += ' AND r.hotel_id = ?';
-      params.push(hotelId);
+            return departures;
+        } finally {
+            connection.release();
+        }
     }
 
-    const [arrivals] = await db.execute(query, params);
-    return arrivals;
-  }
-
-  // Obtenir les départs du jour
-  static async getTodayDepartures(hotelId = null) {
-    let query = `
-      SELECT r.*, ch.numero_chambre, ch.type_chambre, h.nom as nom_hotel, u.nom as nom_utilisateur
-      FROM reservations r
-      LEFT JOIN chambres_hotel ch ON r.chambre_id = ch.id
-      LEFT JOIN hotels h ON r.hotel_id = h.id
-      LEFT JOIN utilisateurs u ON r.utilisateur_id = u.id
-      WHERE DATE(r.date_depart) = CURDATE() 
-      AND r.statut = 'confirmee'
-    `;
-    let params = [];
-
-    if (hotelId) {
-      query += ' AND r.hotel_id = ?';
-      params.push(hotelId);
+    // Mettre à jour le statut d'une réservation
+    static async updateStatus(id, statut) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [result] = await connection.execute(
+                'UPDATE reservations SET statut = ? WHERE id = ?',
+                [statut, id]
+            );
+            
+            return result.affectedRows > 0;
+        } finally {
+            connection.release();
+        }
     }
 
-    const [departures] = await db.execute(query, params);
-    return departures;
-  }
-
-  // Obtenir les réservations en cours
-  static async getCurrentReservations(hotelId = null) {
-    let query = `
-      SELECT r.*, ch.numero_chambre, ch.type_chambre, h.nom as nom_hotel, u.nom as nom_utilisateur
-      FROM reservations r
-      LEFT JOIN chambres_hotel ch ON r.chambre_id = ch.id
-      LEFT JOIN hotels h ON r.hotel_id = h.id
-      LEFT JOIN utilisateurs u ON r.utilisateur_id = u.id
-      WHERE r.statut = 'confirmee'
-      AND CURDATE() BETWEEN DATE(r.date_arrivee) AND DATE(r.date_depart)
-    `;
-    let params = [];
-
-    if (hotelId) {
-      query += ' AND r.hotel_id = ?';
-      params.push(hotelId);
+    // Assigner une chambre à une réservation
+    static async assignRoom(reservationId, roomId) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [result] = await connection.execute(
+                'UPDATE reservations SET chambre_id = ?, statut = "en_cours" WHERE id = ?',
+                [roomId, reservationId]
+            );
+            
+            return result.affectedRows > 0;
+        } finally {
+            connection.release();
+        }
     }
 
-    const [reservations] = await db.execute(query, params);
-    return reservations;
-  }
+    // Obtenir les statistiques de réservations
+    static async getStats(hotelId = null) {
+        const connection = await pool.getConnection();
+        
+        try {
+            let queryParams = [];
+            let hotelCondition = '';
 
-  // Générer un numéro de réservation unique
-  static async generateReservationNumber(hotelId, reservationId) {
-    const randomDigits = Math.floor(10000 + Math.random() * 90000); // 5 chiffres
-    const randomAlpha = Math.random().toString(36).substring(2, 5).toUpperCase(); // 3 lettres
-    return `HTL-${randomDigits}-${randomAlpha}`;
-  }
+            if (hotelId) {
+                hotelCondition = ' WHERE hotel_id = ?';
+                queryParams.push(hotelId);
+            }
 
-  // Vérifier les conflits de réservation
-  static async checkConflicts(hotelId, chambreId, dateArrivee, dateDepart) {
-    const [conflicts] = await db.execute(`
-      SELECT * FROM reservations 
-      WHERE hotel_id = ? AND chambre_id = ? 
-      AND statut != 'annulee'
-      AND (
-        (date_arrivee < ? AND date_depart > ?) 
-        OR (date_arrivee < DATE_ADD(?, INTERVAL 1 HOUR) AND date_depart > DATE_SUB(?, INTERVAL 1 HOUR))
-      )
-    `, [hotelId, chambreId, dateDepart, dateArrivee, dateArrivee, dateDepart]);
-    
-    return conflicts;
-  }
+            const [totalReservations] = await connection.execute(
+                `SELECT COUNT(*) as total FROM reservations${hotelCondition}`,
+                queryParams
+            );
+
+            const [confirmedReservations] = await connection.execute(
+                `SELECT COUNT(*) as confirmed FROM reservations WHERE statut = 'confirmee'${hotelCondition ? ' AND hotel_id = ?' : ''}`,
+                queryParams
+            );
+
+            const [revenue] = await connection.execute(
+                `SELECT SUM(montant_total) as revenue FROM reservations WHERE statut != 'annulee'${hotelCondition ? ' AND hotel_id = ?' : ''}`,
+                queryParams
+            );
+
+            return {
+                total: totalReservations[0].total,
+                confirmed: confirmedReservations[0].confirmed,
+                revenue: revenue[0].revenue || 0
+            };
+        } finally {
+            connection.release();
+        }
+    }
 }
 
 module.exports = Reservation;

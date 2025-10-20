@@ -1,172 +1,93 @@
 const Hotel = require('../models/Hotel');
+const Room = require('../models/Room');
 
-const getHotels = async (req, res) => {
-  try {
-    const conditions = {
-      userRole: req.utilisateur.role,
-      hotelId: req.utilisateur.hotel_id
-    };
-    
-    const hotels = await Hotel.findAll(conditions);
-    res.json(hotels);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const getDetailsHotel = async (req, res) => {
-  try {
-    const hotelId = req.params.id;
-    
-    // Vérifier les permissions
-    if (req.utilisateur.role !== 'super_admin' && req.utilisateur.hotel_id != hotelId) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
+class HotelController {
+    // Récupérer tous les hôtels
+    static async getAllHotels(req, res) {
+        try {
+            const hotels = await Hotel.findAll();
+            res.json(hotels);
+        } catch (error) {
+            console.error('Erreur getAllHotels:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
     }
 
-    const hotel = await Hotel.findById(hotelId);
+    // Récupérer un hôtel par ID
+    static async getHotelById(req, res) {
+        try {
+            const hotel = await Hotel.findById(req.params.id);
+            if (!hotel) {
+                return res.status(404).json({ error: 'Hôtel non trouvé' });
+            }
 
-    if (!hotel) {
-      return res.status(404).json({ message: 'Hôtel non trouvé' });
+            // Récupérer les chambres disponibles par type
+            const availableRooms = await Room.getAvailableByType(hotel.id);
+
+            res.json({
+                ...hotel,
+                chambres_disponibles: availableRooms
+            });
+        } catch (error) {
+            console.error('Erreur getHotelById:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
     }
 
-    // Obtenir les statistiques de l'hôtel
-    const statistiques = await Hotel.getStats(hotelId);
-
-    res.json({
-      hotel,
-      statistiques
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const creerHotel = async (req, res) => {
-  try {
-    const { nom, adresse, telephone, email } = req.body;
-    
-    if (req.utilisateur.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Accès non autorisé' });
+    // Créer un nouvel hôtel (Super Admin seulement)
+    static async createHotel(req, res) {
+        try {
+            const hotelId = await Hotel.create(req.body);
+            res.status(201).json({ 
+                message: 'Hôtel créé avec succès',
+                hotelId 
+            });
+        } catch (error) {
+            console.error('Erreur createHotel:', error);
+            res.status(500).json({ error: 'Erreur lors de la création de l\'hôtel' });
+        }
     }
 
-    if (!nom || !adresse) {
-      return res.status(400).json({ message: 'Nom et adresse sont obligatoires' });
+    // Mettre à jour un hôtel
+    static async updateHotel(req, res) {
+        try {
+            const updated = await Hotel.update(req.params.id, req.body);
+            if (!updated) {
+                return res.status(404).json({ error: 'Hôtel non trouvé' });
+            }
+
+            res.json({ message: 'Hôtel mis à jour avec succès' });
+        } catch (error) {
+            console.error('Erreur updateHotel:', error);
+            res.status(500).json({ error: 'Erreur lors de la mise à jour de l\'hôtel' });
+        }
     }
 
-    const hotelId = await Hotel.create({
-      nom,
-      adresse,
-      telephone,
-      email
-    });
+    // Supprimer un hôtel (soft delete)
+    static async deleteHotel(req, res) {
+        try {
+            const deleted = await Hotel.delete(req.params.id);
+            if (!deleted) {
+                return res.status(404).json({ error: 'Hôtel non trouvé' });
+            }
 
-    res.status(201).json({ 
-      message: 'Hôtel créé avec succès',
-      hotel: {
-        id: hotelId,
-        nom,
-        adresse,
-        telephone,
-        email,
-        statut: 'actif'
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const getTauxOccupation = async (req, res) => {
-  try {
-    const hotelId = req.params.hotelId || req.utilisateur.hotel_id;
-
-    if (!hotelId) {
-      return res.status(400).json({ message: 'Hôtel non spécifié' });
+            res.json({ message: 'Hôtel supprimé avec succès' });
+        } catch (error) {
+            console.error('Erreur deleteHotel:', error);
+            res.status(500).json({ error: 'Erreur lors de la suppression de l\'hôtel' });
+        }
     }
 
-    // Vérifier les permissions
-    if (req.utilisateur.role !== 'super_admin' && req.utilisateur.hotel_id != hotelId) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
+    // Obtenir les statistiques d'un hôtel
+    static async getHotelStats(req, res) {
+        try {
+            const stats = await Hotel.getStats(req.params.id);
+            res.json(stats);
+        } catch (error) {
+            console.error('Erreur getHotelStats:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
     }
+}
 
-    const tauxOccupation = await Hotel.getTauxOccupation(hotelId);
-
-    res.json(tauxOccupation);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const verifierChambreJoker = async (req, res) => {
-  try {
-    const hotelId = req.params.hotelId || req.utilisateur.hotel_id;
-
-    if (!hotelId) {
-      return res.status(400).json({ message: 'Hôtel non spécifié' });
-    }
-
-    // Vérifier les permissions
-    if (req.utilisateur.role !== 'super_admin' && req.utilisateur.hotel_id != hotelId) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
-
-    const chambreJokerDisponible = await Hotel.checkChambreJoker(hotelId);
-
-    res.json({
-      chambre_joker_disponible: chambreJokerDisponible,
-      message: chambreJokerDisponible ? 
-        'Chambre joker disponible' : 
-        'Chambre joker non disponible'
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-const mettreAJourHotel = async (req, res) => {
-  try {
-    const hotelId = req.params.id;
-    const { nom, adresse, telephone, email, statut } = req.body;
-
-    // Vérifier les permissions
-    if (req.utilisateur.role !== 'super_admin') {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
-
-    const succes = await Hotel.update(hotelId, {
-      nom,
-      adresse,
-      telephone,
-      email,
-      statut
-    });
-
-    if (!succes) {
-      return res.status(404).json({ message: 'Hôtel non trouvé' });
-    }
-
-    res.json({ 
-      message: 'Hôtel mis à jour avec succès',
-      hotel: {
-        id: hotelId,
-        nom,
-        adresse,
-        telephone,
-        email,
-        statut
-      }
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// ⚠️ ASSUREZ-VOUS QUE CETTE PARTIE EST CORRECTE ⚠️
-module.exports = { 
-  getHotels, 
-  getDetailsHotel, 
-  creerHotel,
-  getTauxOccupation,
-  verifierChambreJoker,
-  mettreAJourHotel
-};
+module.exports = HotelController;

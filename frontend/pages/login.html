@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion - TogoHotel Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container">
+            <a class="navbar-brand" href="../index.html">
+                <i class="fas fa-hotel me-2"></i>TogoHotel Manager
+            </a>
+        </div>
+    </nav>
+
+    <!-- Formulaire de Connexion -->
+    <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-6 col-lg-5">
+                <div class="card shadow">
+                    <div class="card-body p-5">
+                        <div class="text-center mb-4">
+                            <h2 class="card-title fw-bold">Connexion</h2>
+                            <p class="text-muted">Accédez à votre compte</p>
+                        </div>
+
+                        <form id="loginForm" class="needs-validation" novalidate>
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Adresse email</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-envelope"></i>
+                                    </span>
+                                    <input type="email" class="form-control" id="email" required>
+                                    <div class="invalid-feedback">
+                                        Veuillez entrer une adresse email valide.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label for="password" class="form-label">Mot de passe</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">
+                                        <i class="fas fa-lock"></i>
+                                    </span>
+                                    <input type="password" class="form-control" id="password" required>
+                                    <div class="invalid-feedback">
+                                        Veuillez entrer votre mot de passe.
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="mb-3 form-check">
+                                <input type="checkbox" class="form-check-input" id="rememberMe">
+                                <label class="form-check-label" for="rememberMe">Se souvenir de moi</label>
+                            </div>
+
+                            <button type="submit" class="btn btn-primary w-100 py-2" id="loginButton">
+                                <i class="fas fa-sign-in-alt me-2"></i>Se connecter
+                            </button>
+                        </form>
+
+                        <div class="text-center mt-4">
+                            <p class="mb-0">
+                                Pas encore de compte ? 
+                                <a href="signup.html" class="text-decoration-none">Créer un compte</a>
+                            </p>
+                        </div>
+
+                        <!-- Comptes de test -->
+                        <div class="mt-4 p-3 bg-light rounded">
+                            <h6 class="mb-2">
+                                <i class="fas fa-info-circle me-2 text-info"></i>Comptes de test
+                            </h6>
+                            <div class="small">
+                                <div><strong>Client:</strong> client@togo.tg / password</div>
+                                <div><strong>Réception:</strong> reception@sarakawa.tg / password</div>
+                                <div><strong>Admin:</strong> admin@sarakawa.tg / password</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const loginForm = document.getElementById('loginForm');
+            const loginButton = document.getElementById('loginButton');
+
+            // Rediriger si déjà connecté
+            if (Auth.isLoggedIn()) {
+                const user = Auth.getUser();
+                if (user.role === 'client') {
+                    window.location.href = '../index.html';
+                } else {
+                    window.location.href = getDashboardUrl(user.role);
+                }
+                return;
+            }
+
+            loginForm.addEventListener('submit', async function(e) {
+                e.preventDefault();
+                
+                if (!loginForm.checkValidity()) {
+                    e.stopPropagation();
+                    loginForm.classList.add('was-validated');
+                    return;
+                }
+
+                const email = document.getElementById('email').value;
+                const password = document.getElementById('password').value;
+
+                // Désactiver le bouton
+                loginButton.disabled = true;
+                loginButton.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Connexion...';
+
+                try {
+                    const result = await Auth.login(email, password);
+                    
+                    Utils.showSuccess('Connexion réussie ! Redirection...');
+                    
+                    // Rediriger selon le rôle
+                    setTimeout(() => {
+                        const user = Auth.getUser();
+                        if (user.role === 'client') {
+                            window.location.href = '../index.html';
+                        } else {
+                            window.location.href = getDashboardUrl(user.role);
+                        }
+                    }, 1500);
+
+                } catch (error) {
+                    console.error('Erreur de connexion:', error);
+                    
+                    // Afficher l'erreur
+                    const alertDiv = document.createElement('div');
+                    alertDiv.className = 'alert alert-danger alert-dismissible fade show mt-3';
+                    alertDiv.innerHTML = `
+                        <i class="fas fa-exclamation-triangle me-2"></i>${error.message}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    `;
+                    
+                    loginForm.parentNode.insertBefore(alertDiv, loginForm.nextSibling);
+                    
+                    // Réactiver le bouton
+                    loginButton.disabled = false;
+                    loginButton.innerHTML = '<i class="fas fa-sign-in-alt me-2"></i>Se connecter';
+                }
+            });
+
+            function getDashboardUrl(role) {
+                const urls = {
+                    'reception': 'reception/dashboard.html',
+                    'menage': 'cleaning/dashboard.html',
+                    'admin_hotel': 'admin/dashboard.html',
+                    'super_admin': 'admin/dashboard.html'
+                };
+                return urls[role] || '../index.html';
+            }
+
+            // Remplissage automatique pour les tests
+            const urlParams = new URLSearchParams(window.location.search);
+            const testAccount = urlParams.get('test');
+            if (testAccount) {
+                const accounts = {
+                    'client': { email: 'client@togo.tg', password: 'password' },
+                    'reception': { email: 'reception@sarakawa.tg', password: 'password' },
+                    'admin': { email: 'admin@sarakawa.tg', password: 'password' }
+                };
+                
+                const account = accounts[testAccount];
+                if (account) {
+                    document.getElementById('email').value = account.email;
+                    document.getElementById('password').value = account.password;
+                }
+            }
+        });
+    </script>
+</body>
+</html>

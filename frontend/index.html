@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TogoHotel Manager - Gestion Hôtelière</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="index.html">
+                <i class="fas fa-hotel me-2"></i>TogoHotel Manager
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="index.html">Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="pages/hotels.html">Hôtels</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav" id="authLinks">
+                    <a class="nav-link" href="pages/login.html">Connexion</a>
+                    <a class="nav-link" href="pages/signup.html">Inscription</a>
+                </div>
+                <div class="navbar-nav" id="userMenu" style="display: none;">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>
+                            <span id="userName"></span>
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="pages/my-bookings.html">Mes réservations</a></li>
+                            <li><a class="dropdown-item" href="pages/profile.html">Mon profil</a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="Auth.logout()">Déconnexion</a></li>
+                        </ul>
+                    </li>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6">
+                    <h1 class="display-4 fw-bold text-white mb-4">Bienvenue au TogoHotel Manager</h1>
+                    <p class="lead text-white mb-4">Découvrez les meilleurs hôtels du Togo et réservez en toute simplicité. Gestion complète pour clients et professionnels.</p>
+                    <div class="d-flex gap-3 flex-wrap">
+                        <a href="pages/hotels.html" class="btn btn-primary btn-lg">
+                            <i class="fas fa-search me-2"></i>Découvrir nos hôtels
+                        </a>
+                        <a href="pages/signup.html" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-user-plus me-2"></i>Créer un compte
+                        </a>
+                    </div>
+                </div>
+                <div class="col-lg-6 text-center">
+                    <img src="https://images.unsplash.com/photo-1566073771259-6a8506099945?w=600&h=400&fit=crop" 
+                         alt="Hôtel de luxe" class="img-fluid rounded shadow">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row text-center mb-5">
+                <div class="col-12">
+                    <h2 class="display-5 fw-bold mb-3">Pourquoi choisir TogoHotel Manager ?</h2>
+                    <p class="lead text-muted">Une solution complète pour tous vos besoins hôteliers</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-primary mb-3">
+                                <i class="fas fa-search fa-2x text-white"></i>
+                            </div>
+                            <h4 class="card-title">Recherche Intelligente</h4>
+                            <p class="card-text text-muted">Trouvez l'hôtel parfait selon vos critères : localisation, budget, équipements.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-success mb-3">
+                                <i class="fas fa-calendar-check fa-2x text-white"></i>
+                            </div>
+                            <h4 class="card-title">Réservation Instantanée</h4>
+                            <p class="card-text text-muted">Réservez en quelques clics, avec confirmation immédiate.</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card feature-card h-100 border-0">
+                        <div class="card-body text-center p-4">
+                            <div class="feature-icon bg-info mb-3">
+                                <i class="fas fa-mobile-alt fa-2x text-white"></i>
+                            </div>
+                            <h4 class="card-title">Multi-Plateforme</h4>
+                            <p class="card-text text-muted">Accédez à votre compte depuis n'importe quel appareil.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="py-5 bg-light">
+        <div class="container">
+            <div class="row text-center">
+                <div class="col-md-3">
+                    <h3 class="display-4 fw-bold text-primary">4</h3>
+                    <p class="text-muted">Hôtels Partenaires</p>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="display-4 fw-bold text-success">240+</h3>
+                    <p class="text-muted">Chambres Disponibles</p>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="display-4 fw-bold text-info">2</h3>
+                    <p class="text-muted">Villes Couvertes</p>
+                </div>
+                <div class="col-md-3">
+                    <h3 class="display-4 fw-bold text-warning">24/7</h3>
+                    <p class="text-muted">Support Client</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Popular Hotels Preview -->
+    <section class="py-5">
+        <div class="container">
+            <div class="row mb-5">
+                <div class="col-12 text-center">
+                    <h2 class="display-5 fw-bold">Nos Hôtels Partenaires</h2>
+                    <p class="lead text-muted">Découvrez les établissements les plus prisés du Togo</p>
+                </div>
+            </div>
+            <div class="row" id="hotelsPreview">
+                <!-- Les hôtels seront chargés ici par JavaScript -->
+            </div>
+            <div class="text-center mt-5">
+                <a href="pages/hotels.html" class="btn btn-primary btn-lg">
+                    <i class="fas fa-hotel me-2"></i>Voir tous les hôtels
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4">
+                    <h5 class="mb-3">
+                        <i class="fas fa-hotel me-2"></i>TogoHotel Manager
+                    </h5>
+                    <p class="text-muted">Votre partenaire de confiance pour la gestion hôtelière au Togo.</p>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="mb-3">Liens Rapides</h5>
+                    <ul class="list-unstyled">
+                        <li><a href="pages/hotels.html" class="text-muted text-decoration-none">Hôtels</a></li>
+                        <li><a href="pages/login.html" class="text-muted text-decoration-none">Connexion</a></li>
+                        <li><a href="pages/signup.html" class="text-muted text-decoration-none">Inscription</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5 class="mb-3">Contact</h5>
+                    <ul class="list-unstyled text-muted">
+                        <li><i class="fas fa-envelope me-2"></i>contact@togohotel.tg</li>
+                        <li><i class="fas fa-phone me-2"></i>+228 12 34 56 78</li>
+                        <li><i class="fas fa-map-marker-alt me-2"></i>Lomé, Togo</li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <p class="text-muted mb-0">&copy; 2024 TogoHotel Manager. Tous droits réservés.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/auth.js"></script>
+    <script src="js/api.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Charger la prévisualisation des hôtels
+        async function loadHotelsPreview() {
+            try {
+                const hotels = await API.getHotels();
+                const previewContainer = document.getElementById('hotelsPreview');
+                
+                // Afficher seulement 4 hôtels en prévisualisation
+                const previewHotels = hotels.slice(0, 4);
+                
+                previewHotels.forEach(hotel => {
+                    const hotelCard = `
+                        <div class="col-md-6 col-lg-3">
+                            <div class="card hotel-card h-100">
+                                <img src="${getHotelImage(hotel.id)}" class="card-img-top" alt="${hotel.nom}" style="height: 200px; object-fit: cover;">
+                                <div class="card-body">
+                                    <h5 class="card-title">${hotel.nom}</h5>
+                                    <p class="card-text text-muted">
+                                        <i class="fas fa-map-marker-alt text-danger me-1"></i> ${hotel.ville}
+                                    </p>
+                                    <p class="card-text small text-muted">
+                                        <i class="fas fa-phone text-primary me-1"></i> ${hotel.telephone}
+                                    </p>
+                                    <div class="mb-3">
+                                        ${generateStars(4)}
+                                        <span class="text-muted ms-1">4.0</span>
+                                    </div>
+                                    <a href="pages/hotel-detail.html?id=${hotel.id}" class="btn btn-primary w-100">
+                                        <i class="fas fa-eye me-1"></i>Voir l'hôtel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    previewContainer.innerHTML += hotelCard;
+                });
+            } catch (error) {
+                console.error('Erreur lors du chargement des hôtels:', error);
+                // Fallback avec des données de démonstration
+                showDemoHotels();
+            }
+        }
+
+        function getHotelImage(hotelId) {
+            const images = {
+                1: 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop',
+                2: 'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?w=400&h=300&fit=crop',
+                3: 'https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400&h=300&fit=crop',
+                4: 'https://images.unsplash.com/photo-1618773928121-c32242e63f39?w=400&h=300&fit=crop'
+            };
+            return images[hotelId] || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400&h=300&fit=crop';
+        }
+
+        function generateStars(rating) {
+            let stars = '';
+            for (let i = 1; i <= 5; i++) {
+                if (i <= rating) {
+                    stars += '<i class="fas fa-star text-warning"></i>';
+                } else {
+                    stars += '<i class="far fa-star text-warning"></i>';
+                }
+            }
+            return stars;
+        }
+
+        function showDemoHotels() {
+            const demoHotels = [
+                { id: 1, nom: "Hôtel Sarakawa", ville: "Lomé", telephone: "+228 22 21 45 00" },
+                { id: 2, nom: "Hôtel du 2 Février", ville: "Lomé", telephone: "+228 22 23 18 18" },
+                { id: 3, nom: "Hôtel Palm Beach", ville: "Lomé", telephone: "+228 22 21 13 13" },
+                { id: 4, nom: "Hôtel Concorde", ville: "Kara", telephone: "+228 26 60 10 10" }
+            ];
+
+            const previewContainer = document.getElementById('hotelsPreview');
+            demoHotels.forEach(hotel => {
+                const hotelCard = `
+                    <div class="col-md-6 col-lg-3">
+                        <div class="card hotel-card h-100">
+                            <img src="${getHotelImage(hotel.id)}" class="card-img-top" alt="${hotel.nom}">
+                            <div class="card-body">
+                                <h5 class="card-title">${hotel.nom}</h5>
+                                <p class="card-text text-muted">
+                                    <i class="fas fa-map-marker-alt text-danger me-1"></i> ${hotel.ville}
+                                </p>
+                                <a href="pages/hotel-detail.html?id=${hotel.id}" class="btn btn-primary w-100">
+                                    <i class="fas fa-eye me-1"></i>Voir l'hôtel
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                previewContainer.innerHTML += hotelCard;
+            });
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            Auth.updateNavigation();
+            loadHotelsPreview();
+        });
+    </script>
+</body>
+</html>

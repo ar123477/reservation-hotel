@@ -1,349 +1,191 @@
 const Reservation = require('../models/Reservation');
 const Room = require('../models/Room');
-const Hotel = require('../models/Hotel');
 
-const creerReservation = async (req, res) => {
-  try {
-    const { hotel_id, chambre_id, date_arrivee, date_depart, type_reservation, informations_client, methode_paiement } = req.body;
+class ReservationController {
+    // Créer une nouvelle réservation
+    static async createReservation(req, res) {
+        try {
+            const {
+                hotel_id,
+                type_chambre,
+                date_arrivee,
+                date_depart,
+                type_reservation,
+                duree_heures,
+                methode_paiement,
+                montant_total
+            } = req.body;
 
-    if (!hotel_id || !chambre_id || !date_arrivee || !date_depart) {
-      return res.status(400).json({ message: 'Tous les champs obligatoires doivent être remplis' });
+            // Vérifier la disponibilité pour les réservations classiques
+            if (type_reservation === 'classique') {
+                const availableRoom = await Room.checkAvailability(
+                    hotel_id,
+                    type_chambre,
+                    date_arrivee,
+                    date_depart
+                );
+
+                if (!availableRoom) {
+                    return res.status(400).json({ error: 'Aucune chambre disponible pour les dates sélectionnées' });
+                }
+            }
+
+            // Informations du client
+            const informations_client = {
+                nom: req.user.nom,
+                prenom: req.user.prenom,
+                email: req.user.email,
+                telephone: req.user.telephone
+            };
+
+            // Créer la réservation
+            const result = await Reservation.create({
+                hotel_id,
+                type_chambre,
+                utilisateur_id: req.user.id,
+                date_arrivee,
+                date_depart,
+                type_reservation,
+                duree_heures,
+                methode_paiement,
+                montant_total,
+                informations_client
+            });
+
+            res.status(201).json({
+                message: 'Réservation créée avec succès',
+                reservation_id: result.id,
+                numero_reservation: result.numero_reservation
+            });
+        } catch (error) {
+            console.error('Erreur createReservation:', error);
+            res.status(500).json({ error: 'Erreur lors de la création de la réservation' });
+        }
     }
 
-    // Vérifier que la chambre existe et appartient à l'hôtel
-    const chambre = await Room.findById(chambre_id);
-    
-    if (!chambre) {
-      return res.status(400).json({ message: 'Chambre non trouvée' });
+    // Récupérer les réservations de l'utilisateur
+    static async getUserReservations(req, res) {
+        try {
+            const reservations = await Reservation.findByUserId(req.user.id);
+            res.json(reservations);
+        } catch (error) {
+            console.error('Erreur getUserReservations:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
     }
 
-    if (chambre.hotel_id != hotel_id) {
-      return res.status(400).json({ message: 'Chambre non trouvée dans cet hôtel' });
+    // Annuler une réservation
+    static async cancelReservation(req, res) {
+        try {
+            const reservationId = req.params.id;
+
+            // Vérifier que la réservation appartient à l'utilisateur
+            const reservation = await Reservation.findById(reservationId);
+            if (!reservation || reservation.utilisateur_id !== req.user.id) {
+                return res.status(404).json({ error: 'Réservation non trouvée' });
+            }
+
+            // Vérifier si l'annulation est possible (48h avant)
+            const dateArrivee = new Date(reservation.date_arrivee);
+            const maintenant = new Date();
+            const differenceHeures = (dateArrivee - maintenant) / (1000 * 60 * 60);
+
+            if (differenceHeures < 48) {
+                return res.status(400).json({ error: 'Annulation impossible moins de 48h avant l\'arrivée' });
+            }
+
+            // Annuler la réservation
+            await Reservation.updateStatus(reservationId, 'annulee');
+
+            res.json({ message: 'Réservation annulée avec succès' });
+        } catch (error) {
+            console.error('Erreur cancelReservation:', error);
+            res.status(500).json({ error: 'Erreur lors de l\'annulation' });
+        }
     }
 
-    // Vérifier les conflits de réservation
-    const conflits = await Reservation.checkConflicts(hotel_id, chambre_id, date_arrivee, date_depart);
-
-    if (conflits.length > 0) {
-      return res.status(400).json({ 
-        message: 'Chambre non disponible pour ces dates',
-        conflits: conflits
-      });
+    // Récupérer les arrivées du jour (réception)
+    static async getTodayArrivals(req, res) {
+        try {
+            const arrivals = await Reservation.getTodayArrivals(req.user.hotel_id);
+            res.json(arrivals);
+        } catch (error) {
+            console.error('Erreur getTodayArrivals:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
     }
 
-    // Contrôle anti-sur-réservation additionnel: si occupation > 90% et pas de chambre joker disponible, bloquer
-    const occupation = await Hotel.getTauxOccupation(hotel_id);
-    const jokerDisponible = await Hotel.checkChambreJoker(hotel_id);
-    const taux = parseFloat(occupation.taux_occupation || 0);
-    if (taux > 90 && !jokerDisponible) {
-      return res.status(409).json({
-        message: 'Capacité presque pleine: impossible de créer une réservation (aucune chambre joker disponible)',
-        details: { taux_occupation: occupation.taux_occupation, chambre_joker_disponible: jokerDisponible }
-      });
+    // Récupérer les départs du jour (réception)
+    static async getTodayDepartures(req, res) {
+        try {
+            const departures = await Reservation.getTodayDepartures(req.user.hotel_id);
+            res.json(departures);
+        } catch (error) {
+            console.error('Erreur getTodayDepartures:', error);
+            res.status(500).json({ error: 'Erreur serveur' });
+        }
     }
 
-    // Calculer le montant total en FCFA
-    let montantTotal = 0;
-    const dateArrivee = new Date(date_arrivee);
-    const dateDepart = new Date(date_depart);
-    
-    if (type_reservation === 'horaire') {
-      const heures = Math.ceil((dateDepart - dateArrivee) / (1000 * 60 * 60));
-      const tarifHoraire = chambre.prix / 24;
-      montantTotal = heures * tarifHoraire;
-    } else {
-      const jours = Math.ceil((dateDepart - dateArrivee) / (1000 * 60 * 60 * 24));
-      montantTotal = jours * chambre.prix;
+    // Check-in (réception)
+    static async checkIn(req, res) {
+        try {
+            const { reservationId, roomId } = req.body;
+
+            // Vérifier que la chambre est disponible
+            const room = await Room.findById(roomId);
+            if (!room || room.hotel_id !== req.user.hotel_id || room.statut !== 'disponible') {
+                return res.status(400).json({ error: 'Chambre non disponible' });
+            }
+
+            // Vérifier que la réservation existe
+            const reservation = await Reservation.findById(reservationId);
+            if (!reservation || reservation.hotel_id !== req.user.hotel_id || reservation.statut !== 'confirmee') {
+                return res.status(404).json({ error: 'Réservation non trouvée' });
+            }
+
+            // Vérifier que le type de chambre correspond
+            if (reservation.type_chambre !== room.type_chambre) {
+                return res.status(400).json({ error: 'Le type de chambre ne correspond pas à la réservation' });
+            }
+
+            // Assigner la chambre et mettre à jour les statuts
+            await Reservation.assignRoom(reservationId, roomId);
+            await Room.updateStatus(roomId, 'occupee');
+
+            res.json({ 
+                message: 'Check-in effectué avec succès',
+                room_number: room.numero_chambre
+            });
+        } catch (error) {
+            console.error('Erreur checkIn:', error);
+            res.status(500).json({ error: 'Erreur lors du check-in' });
+        }
     }
 
-    // Arrondir à 2 décimales
-    montantTotal = Math.round(montantTotal * 100) / 100;
+    // Check-out (réception)
+    static async checkOut(req, res) {
+        try {
+            const { reservationId } = req.body;
 
-    // ✅ CORRIGÉ : Déterminer le statut de paiement
-    let statutPaiement;
-    if (methode_paiement === 'en_ligne') {
-      // Le paiement en ligne sera traité séparément via le module paiement
-      statutPaiement = 'en_attente'; // ← CORRECTION APPLIQUÉE
-    } else {
-      // Paiement sur place
-      statutPaiement = 'a_payer_sur_place';
+            // Vérifier que la réservation existe et est en cours
+            const reservation = await Reservation.findById(reservationId);
+            if (!reservation || reservation.hotel_id !== req.user.hotel_id || reservation.statut !== 'en_cours') {
+                return res.status(404).json({ error: 'Réservation non trouvée ou pas en cours' });
+            }
+
+            // Mettre à jour la réservation et la chambre
+            await Reservation.updateStatus(reservationId, 'terminee');
+            
+            if (reservation.chambre_id) {
+                await Room.updateStatus(reservation.chambre_id, 'nettoyage');
+            }
+
+            res.json({ message: 'Check-out effectué avec succès' });
+        } catch (error) {
+            console.error('Erreur checkOut:', error);
+            res.status(500).json({ error: 'Erreur lors du check-out' });
+        }
     }
+}
 
-    // Créer la réservation avec le Model
-    const reservationId = await Reservation.create({
-      hotel_id,
-      chambre_id,
-      utilisateur_id: req.utilisateur.id,
-      date_arrivee,
-      date_depart,
-      type_reservation,
-      informations_client,
-      methode_paiement,
-      statut_paiement: statutPaiement,
-      montant_total: montantTotal
-    });
-
-    // Marquer la chambre comme occupée
-    await Room.updateStatus(chambre_id, 'occupee');
-
-    // Générer le numéro de réservation
-    const numeroReservation = await Reservation.generateReservationNumber(hotel_id, reservationId);
-
-    res.status(201).json({ 
-      message: 'Réservation créée avec succès',
-      reservation: {
-        id: reservationId,
-        numero_reservation: numeroReservation,
-        hotel_id,
-        chambre_id,
-        numero_chambre: chambre.numero_chambre,
-        type_chambre: chambre.type_chambre,
-        date_arrivee,
-        date_depart,
-        type_reservation,
-        montant_total: montantTotal,
-        montant_total_formate: new Intl.NumberFormat('fr-FR', { 
-          style: 'currency', 
-          currency: 'XOF' 
-        }).format(montantTotal),
-        statut_paiement: statutPaiement,
-        statut: 'confirmee'
-      }
-    });
-
-  } catch (erreur) {
-    console.error('Erreur création réservation:', erreur);
-    res.status(500).json({ message: 'Erreur serveur lors de la création de la réservation' });
-  }
-};
-
-const getReservations = async (req, res) => {
-  try {
-    const filters = {
-      hotel_id: req.utilisateur.role !== 'super_admin' ? req.utilisateur.hotel_id : req.query.hotel_id,
-      utilisateur_id: req.query.mes_reservations ? req.utilisateur.id : null,
-      statut: req.query.statut,
-      date: req.query.date
-    };
-
-    const reservations = await Reservation.findAll(filters);
-    
-    const reservationsFormatees = reservations.map(reservation => ({
-      ...reservation,
-      montant_total_formate: new Intl.NumberFormat('fr-FR', { 
-        style: 'currency', 
-        currency: 'XOF' 
-      }).format(reservation.montant_total || 0)
-    }));
-    
-    res.json(reservationsFormatees);
-  } catch (erreur) {
-    res.status(500).json({ message: erreur.message });
-  }
-};
-
-const getDetailsReservation = async (req, res) => {
-  try {
-    const reservationId = req.params.id;
-    
-    const reservation = await Reservation.findById(reservationId);
-
-    if (!reservation) {
-      return res.status(404).json({ message: 'Réservation non trouvée' });
-    }
-
-    // Vérifier les permissions
-    if (req.utilisateur.role !== 'super_admin' && 
-        req.utilisateur.hotel_id != reservation.hotel_id &&
-        req.utilisateur.id != reservation.utilisateur_id) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
-
-    res.json(reservation);
-  } catch (erreur) {
-    res.status(500).json({ message: erreur.message });
-  }
-};
-
-const getArriveesAujourdhui = async (req, res) => {
-  try {
-    const hotelId = req.utilisateur.role !== 'super_admin' ? req.utilisateur.hotel_id : null;
-    
-    const arrivees = await Reservation.getTodayArrivals(hotelId);
-    
-    const arriveesFormatees = arrivees.map(arrivee => ({
-      ...arrivee,
-      montant_total_formate: new Intl.NumberFormat('fr-FR', { 
-        style: 'currency', 
-        currency: 'XOF' 
-      }).format(arrivee.montant_total || 0)
-    }));
-    
-    res.json(arriveesFormatees);
-  } catch (erreur) {
-    res.status(500).json({ message: erreur.message });
-  }
-};
-
-const getDepartsAujourdhui = async (req, res) => {
-  try {
-    const hotelId = req.utilisateur.role !== 'super_admin' ? req.utilisateur.hotel_id : null;
-    
-    const departs = await Reservation.getTodayDepartures(hotelId);
-    
-    const departsFormatees = departs.map(depart => ({
-      ...depart,
-      montant_total_formate: new Intl.NumberFormat('fr-FR', { 
-        style: 'currency', 
-        currency: 'XOF' 
-      }).format(depart.montant_total || 0)
-    }));
-    
-    res.json(departsFormatees);
-  } catch (erreur) {
-    res.status(500).json({ message: erreur.message });
-  }
-};
-
-const getReservationsEnCours = async (req, res) => {
-  try {
-    const hotelId = req.utilisateur.role !== 'super_admin' ? req.utilisateur.hotel_id : null;
-    
-    const reservations = await Reservation.getCurrentReservations(hotelId);
-    
-    const reservationsFormatees = reservations.map(reservation => ({
-      ...reservation,
-      montant_total_formate: new Intl.NumberFormat('fr-FR', { 
-        style: 'currency', 
-        currency: 'XOF' 
-      }).format(reservation.montant_total || 0)
-    }));
-    
-    res.json(reservationsFormatees);
-  } catch (erreur) {
-    res.status(500).json({ message: erreur.message });
-  }
-};
-
-const annulerReservation = async (req, res) => {
-  try {
-    const reservationId = req.params.id;
-    
-    // Récupérer la réservation
-    const reservation = await Reservation.findById(reservationId);
-
-    if (!reservation) {
-      return res.status(404).json({ message: 'Réservation non trouvée' });
-    }
-
-    // Vérifier les permissions
-    if (req.utilisateur.role !== 'super_admin' && 
-        req.utilisateur.hotel_id != reservation.hotel_id &&
-        req.utilisateur.id != reservation.utilisateur_id) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
-
-    // Annuler la réservation
-    const succes = await Reservation.updateStatus(reservationId, 'annulee');
-
-    if (!succes) {
-      return res.status(404).json({ message: 'Erreur lors de l\'annulation' });
-    }
-
-    // Libérer la chambre
-    await Room.updateStatus(reservation.chambre_id, 'disponible');
-
-    res.json({ 
-      message: 'Réservation annulée avec succès',
-      reservation_id: reservationId
-    });
-  } catch (erreur) {
-    res.status(500).json({ message: erreur.message });
-  }
-};
-
-const mettreAJourPaiement = async (req, res) => {
-  try {
-    const reservationId = req.params.id;
-    const { statut_paiement } = req.body;
-
-    // ✅ CORRIGÉ : Ajout des statuts manquants
-    const statutsValides = ['en_attente', 'paye_online', 'a_payer_sur_place', 'paye_sur_place', 'rembourse'];
-    if (!statutsValides.includes(statut_paiement)) {
-      return res.status(400).json({ message: 'Statut de paiement invalide' });
-    }
-
-    // Récupérer la réservation
-    const reservation = await Reservation.findById(reservationId);
-
-    if (!reservation) {
-      return res.status(404).json({ message: 'Réservation non trouvée' });
-    }
-
-    // Vérifier les permissions
-    if (req.utilisateur.role !== 'super_admin' && 
-        req.utilisateur.hotel_id != reservation.hotel_id) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
-
-    // Mettre à jour le statut de paiement
-    const succes = await Reservation.updatePaymentStatus(reservationId, statut_paiement);
-
-    if (!succes) {
-      return res.status(404).json({ message: 'Erreur lors de la mise à jour' });
-    }
-
-    res.json({ 
-      message: 'Statut de paiement mis à jour',
-      reservation_id: reservationId,
-      statut_paiement: statut_paiement
-    });
-  } catch (erreur) {
-    res.status(500).json({ message: erreur.message });
-  }
-};
-
-// Vérifier la sécurité anti-surréservation
-const verifierSecuriteOccupation = async (req, res) => {
-  try {
-    const hotelId = req.params.hotelId || req.utilisateur.hotel_id;
-
-    if (!hotelId) {
-      return res.status(400).json({ message: 'Hôtel non spécifié' });
-    }
-
-    // Vérifier les permissions
-    if (req.utilisateur.role !== 'super_admin' && req.utilisateur.hotel_id != hotelId) {
-      return res.status(403).json({ message: 'Accès non autorisé' });
-    }
-
-    const tauxOccupation = await Hotel.getTauxOccupation(hotelId);
-    const chambreJokerDisponible = await Hotel.checkChambreJoker(hotelId);
-
-    const alerte = tauxOccupation.taux_occupation > 90 ? '⚠️ CRITIQUE' : 
-                   tauxOccupation.taux_occupation > 80 ? '🟡 ATTENTION' : '🟢 NORMAL';
-
-    res.json({
-      taux_occupation: tauxOccupation.taux_occupation,
-      alerte: alerte,
-      chambres_occupees: tauxOccupation.chambres_occupees,
-      chambres_disponibles: tauxOccupation.total_chambres - tauxOccupation.chambres_occupees,
-      chambre_joker_disponible: chambreJokerDisponible,
-      total_chambres: tauxOccupation.total_chambres
-    });
-  } catch (erreur) {
-    res.status(500).json({ message: erreur.message });
-  }
-};
-
-module.exports = { 
-  creerReservation, 
-  getReservations, 
-  getDetailsReservation,
-  getArriveesAujourdhui, 
-  getDepartsAujourdhui,
-  getReservationsEnCours,
-  annulerReservation,
-  mettreAJourPaiement,
-  verifierSecuriteOccupation
-};
+module.exports = ReservationController;

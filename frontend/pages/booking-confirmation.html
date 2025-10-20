@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Confirmation de Réservation - TogoHotel Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="../index.html">
+                <i class="fas fa-hotel me-2"></i>TogoHotel Manager
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../index.html">Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="hotels.html">Hôtels</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav" id="authLinks">
+                    <a class="nav-link" href="login.html">Connexion</a>
+                    <a class="nav-link" href="signup.html">Inscription</a>
+                </div>
+                <div class="navbar-nav" id="userMenu" style="display: none;">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>
+                            <span id="userName"></span>
+                        </a>
+                        <ul class="dropdown-menu" id="dashboardLinks">
+                            <!-- Liens dynamiques selon le rôle -->
+                        </ul>
+                    </li>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Confirmation -->
+    <div class="container mt-5 pt-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+                <div class="card border-0 shadow">
+                    <div class="card-body p-5 text-center">
+                        <!-- Icône de succès -->
+                        <div class="mb-4">
+                            <div class="bg-success rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                 style="width: 80px; height: 80px;">
+                                <i class="fas fa-check fa-2x text-white"></i>
+                            </div>
+                        </div>
+
+                        <!-- Titre -->
+                        <h1 class="h2 fw-bold text-success mb-3">Réservation Confirmée !</h1>
+                        <p class="text-muted mb-4">Votre réservation a été enregistrée avec succès.</p>
+
+                        <!-- Détails de la réservation -->
+                        <div class="card bg-light border-0 mb-4">
+                            <div class="card-body">
+                                <div class="row text-start">
+                                    <div class="col-md-6 mb-3">
+                                        <h6 class="text-muted mb-2">Numéro de Réservation</h6>
+                                        <p class="h5 fw-bold" id="confirmationNumber">-</p>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <h6 class="text-muted mb-2">Hôtel</h6>
+                                        <p class="h6 fw-bold" id="confirmationHotel">-</p>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <h6 class="text-muted mb-2">Type de Chambre</h6>
+                                        <p class="h6 fw-bold" id="confirmationRoomType">-</p>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <h6 class="text-muted mb-2">Dates</h6>
+                                        <p class="h6 fw-bold" id="confirmationDates">-</p>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <h6 class="text-muted mb-2">Montant Total</h6>
+                                        <p class="h4 fw-bold text-primary" id="confirmationAmount">-</p>
+                                    </div>
+                                    <div class="col-md-6 mb-3">
+                                        <h6 class="text-muted mb-2">Statut</h6>
+                                        <span class="badge bg-success fs-6" id="confirmationStatus">Confirmée</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Informations importantes -->
+                        <div class="alert alert-info mb-4">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-info-circle me-2"></i>Informations importantes
+                            </h6>
+                            <ul class="mb-0 ps-3">
+                                <li>Présentez votre numéro de réservation à la réception</li>
+                                <li>Check-in à partir de 14h00</li>
+                                <li>Check-out avant 12h00</li>
+                                <li>Annulation gratuite jusqu'à 48h avant l'arrivée</li>
+                            </ul>
+                        </div>
+
+                        <!-- Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-center">
+                            <a href="my-bookings.html" class="btn btn-primary btn-lg px-4">
+                                <i class="fas fa-calendar-alt me-2"></i>Voir mes réservations
+                            </a>
+                            <a href="../index.html" class="btn btn-outline-secondary btn-lg px-4">
+                                <i class="fas fa-home me-2"></i>Retour à l'accueil
+                            </a>
+                        </div>
+
+                        <!-- Télécharger confirmation -->
+                        <div class="mt-4">
+                            <button class="btn btn-outline-primary btn-sm" onclick="downloadConfirmation()">
+                                <i class="fas fa-download me-2"></i>Télécharger la confirmation
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Section email -->
+                <div class="card mt-4">
+                    <div class="card-body text-center">
+                        <i class="fas fa-envelope fa-2x text-muted mb-3"></i>
+                        <h5 class="card-title">Confirmation par email</h5>
+                        <p class="card-text text-muted">
+                            Un email de confirmation a été envoyé à votre adresse email.
+                            Vérifiez votre boîte de réception.
+                        </p>
+                        <button class="btn btn-outline-primary btn-sm" onclick="resendConfirmation()">
+                            <i class="fas fa-redo me-2"></i>Renvoyer l'email
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/api.js"></script>
+    <script src="../js/main.js"></script>
+    <script>
+        // Données de la réservation (normalement passées via l'URL ou le localStorage)
+        let reservationData = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            Auth.updateNavigation();
+            loadConfirmationData();
+        });
+
+        // Charger les données de confirmation
+        function loadConfirmationData() {
+            // Récupérer les données de l'URL ou du localStorage
+            const urlParams = new URLSearchParams(window.location.search);
+            const reservationId = urlParams.get('reservation');
+            
+            if (reservationId) {
+                // Charger les données depuis l'API
+                loadReservationDetails(reservationId);
+            } else {
+                // Données de démonstration
+                displayConfirmation(getDemoData());
+            }
+        }
+
+        // Charger les détails de la réservation depuis l'API
+        async function loadReservationDetails(reservationId) {
+            try {
+                // Ici, vous devriez appeler l'API pour récupérer les détails de la réservation
+                // const reservation = await API.getReservation(reservationId);
+                
+                // Pour l'instant, on utilise des données de démonstration
+                const reservation = getDemoData();
+                reservation.numero_reservation = reservationId;
+                
+                displayConfirmation(reservation);
+            } catch (error) {
+                console.error('Erreur lors du chargement de la réservation:', error);
+                // Fallback aux données de démonstration
+                displayConfirmation(getDemoData());
+            }
+        }
+
+        // Afficher la confirmation
+        function displayConfirmation(reservation) {
+            reservationData = reservation;
+
+            document.getElementById('confirmationNumber').textContent = reservation.numero_reservation;
+            document.getElementById('confirmationHotel').textContent = reservation.hotel_nom;
+            document.getElementById('confirmationRoomType').textContent = Utils.getRoomTypeLabel(reservation.type_chambre);
+            document.getElementById('confirmationDates').textContent = formatDates(reservation);
+            document.getElementById('confirmationAmount').textContent = API.formatPrice(reservation.montant_total);
+            document.getElementById('confirmationStatus').textContent = getStatusText(reservation.statut);
+        }
+
+        // Formater les dates
+        function formatDates(reservation) {
+            if (reservation.type_reservation === 'classique') {
+                const arrivee = API.formatDate(reservation.date_arrivee);
+                const depart = API.formatDate(reservation.date_depart);
+                return `${arrivee} - ${depart}`;
+            } else {
+                const date = API.formatDate(reservation.date_arrivee);
+                return `${date} (${reservation.duree_heures} heures)`;
+            }
+        }
+
+        // Obtenir le texte du statut
+        function getStatusText(status) {
+            const texts = {
+                'confirmee': 'Confirmée',
+                'en_attente': 'En attente',
+                'annulee': 'Annulée'
+            };
+            return texts[status] || status;
+        }
+
+        // Télécharger la confirmation
+        function downloadConfirmation() {
+            Utils.showSuccess('Génération du PDF en cours...');
+            
+            // Simulation de génération de PDF
+            setTimeout(() => {
+                Utils.showSuccess('Confirmation téléchargée !');
+                
+                // Ici, vous généreriez et téléchargeriez un vrai PDF
+                const link = document.createElement('a');
+                link.href = '#'; // URL du PDF généré
+                link.download = `confirmation-${reservationData.numero_reservation}.pdf`;
+                link.click();
+            }, 2000);
+        }
+
+        // Renvoyer l'email de confirmation
+        function resendConfirmation() {
+            const button = event.target;
+            const originalText = button.innerHTML;
+            
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Envoi...';
+
+            // Simulation d'envoi d'email
+            setTimeout(() => {
+                Utils.showSuccess('Email de confirmation renvoyé !');
+                button.disabled = false;
+                button.innerHTML = originalText;
+            }, 1500);
+        }
+
+        // Données de démonstration
+        function getDemoData() {
+            return {
+                numero_reservation: 'RES' + Date.now().toString().slice(-6),
+                hotel_nom: 'Hôtel Sarakawa',
+                type_chambre: 'standard',
+                type_reservation: 'classique',
+                date_arrivee: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString(),
+                date_depart: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000).toISOString(),
+                duree_heures: null,
+                montant_total: 70000,
+                statut: 'confirmee'
+            };
+        }
+
+        // Impression de la confirmation
+        function printConfirmation() {
+            window.print();
+        }
+
+        // Ajouter le bouton d'impression
+        document.addEventListener('DOMContentLoaded', function() {
+            const actionsDiv = document.querySelector('.d-grid');
+            const printButton = document.createElement('button');
+            printButton.className = 'btn btn-outline-secondary btn-lg px-4';
+            printButton.innerHTML = '<i class="fas fa-print me-2"></i>Imprimer';
+            printButton.onclick = printConfirmation;
+            actionsDiv.appendChild(printButton);
+        });
+    </script>
+
+    <style>
+        @media print {
+            .navbar, .btn, .alert, .card:last-child {
+                display: none !important;
+            }
+            
+            .container {
+                max-width: 100% !important;
+                margin: 0 !important;
+                padding: 0 !important;
+            }
+            
+            .card {
+                border: none !important;
+                box-shadow: none !important;
+            }
+        }
+        
+        .bg-success {
+            background: linear-gradient(135deg, #28a745, #20c997) !important;
+        }
+    </style>
+</body>
+</html>

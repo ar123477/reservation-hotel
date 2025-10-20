@@ -1,123 +1,157 @@
-const db = require('../config/database');
+const pool = require('../config/database');
 
 class Room {
-  // Récupérer toutes les chambres avec filtres
-  static async findAll(filters = {}) {
-    let query = `
-      SELECT ch.*, h.nom as nom_hotel 
-      FROM chambres_hotel ch 
-      LEFT JOIN hotels h ON ch.hotel_id = h.id 
-      WHERE ch.numero_chambre != '999'
-    `;
-    let params = [];
+    // Récupérer toutes les chambres avec filtres
+    static async findAll(filters = {}) {
+        const { hotel_id, type_chambre, statut } = filters;
+        
+        let query = 'SELECT * FROM chambres WHERE 1=1';
+        const params = [];
 
-    if (filters.hotel_id) {
-      query += ' AND ch.hotel_id = ?';
-      params.push(filters.hotel_id);
+        if (hotel_id) {
+            query += ' AND hotel_id = ?';
+            params.push(hotel_id);
+        }
+
+        if (type_chambre) {
+            query += ' AND type_chambre = ?';
+            params.push(type_chambre);
+        }
+
+        if (statut) {
+            query += ' AND statut = ?';
+            params.push(statut);
+        }
+
+        query += ' ORDER BY etage, numero_chambre';
+
+        const connection = await pool.getConnection();
+        
+        try {
+            const [rooms] = await connection.execute(query, params);
+            return rooms;
+        } finally {
+            connection.release();
+        }
     }
 
-    if (filters.type_chambre) {
-      query += ' AND ch.type_chambre = ?';
-      params.push(filters.type_chambre);
+    // Récupérer une chambre par ID
+    static async findById(id) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [rooms] = await connection.execute(
+                'SELECT * FROM chambres WHERE id = ?',
+                [id]
+            );
+            
+            return rooms[0] || null;
+        } finally {
+            connection.release();
+        }
     }
 
-    if (filters.statut) {
-      query += ' AND ch.statut = ?';
-      params.push(filters.statut);
+    // Récupérer les chambres disponibles par type pour un hôtel
+    static async getAvailableByType(hotelId) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [rooms] = await connection.execute(`
+                SELECT type_chambre, COUNT(*) as disponible 
+                FROM chambres 
+                WHERE hotel_id = ? AND statut = 'disponible' 
+                GROUP BY type_chambre
+            `, [hotelId]);
+            
+            return rooms;
+        } finally {
+            connection.release();
+        }
     }
 
-    if (filters.etage) {
-      query += ' AND ch.etage = ?';
-      params.push(filters.etage);
+    // Créer une nouvelle chambre
+    static async create(roomData) {
+        const { hotel_id, numero_chambre, type_chambre, prix, etage, surface, capacite, lit } = roomData;
+        const connection = await pool.getConnection();
+        
+        try {
+            const [result] = await connection.execute(
+                `INSERT INTO chambres (hotel_id, numero_chambre, type_chambre, prix, statut, etage, surface, capacite, lit) 
+                 VALUES (?, ?, ?, ?, 'disponible', ?, ?, ?, ?)`,
+                [hotel_id, numero_chambre, type_chambre, prix, etage, surface, capacite, lit]
+            );
+            
+            return result.insertId;
+        } finally {
+            connection.release();
+        }
     }
 
-    query += ' ORDER BY ch.etage, CAST(ch.numero_chambre AS UNSIGNED)';
-
-    const [rooms] = await db.execute(query, params);
-    return rooms;
-  }
-
-  // Trouver une chambre par ID
-  static async findById(id) {
-    const [rooms] = await db.execute(
-      'SELECT * FROM chambres_hotel WHERE id = ?',
-      [id]
-    );
-    
-    return rooms[0] || null;
-  }
-
-  // Trouver une chambre par numéro et hôtel
-  static async findByNumber(hotelId, roomNumber) {
-    const [rooms] = await db.execute(
-      'SELECT * FROM chambres_hotel WHERE hotel_id = ? AND numero_chambre = ?',
-      [hotelId, roomNumber]
-    );
-    
-    return rooms[0] || null;
-  }
-
-  // Créer une chambre
-  static async create(roomData) {
-    const { hotel_id, numero_chambre, type_chambre, prix, etage } = roomData;
-    
-    const [result] = await db.execute(
-      'INSERT INTO chambres_hotel (hotel_id, numero_chambre, type_chambre, prix, etage) VALUES (?, ?, ?, ?, ?)',
-      [hotel_id, numero_chambre, type_chambre, prix, etage]
-    );
-    
-    return result.insertId;
-  }
-
-  // Mettre à jour le statut d'une chambre
-  static async updateStatus(id, status) {
-    const [result] = await db.execute(
-      'UPDATE chambres_hotel SET statut = ? WHERE id = ?',
-      [status, id]
-    );
-    
-    return result.affectedRows > 0;
-  }
-
-  // Vérifier la disponibilité d'une chambre
-  static async checkAvailability(roomId, checkIn, checkOut) {
-    const [reservations] = await db.execute(`
-      SELECT * FROM reservations 
-      WHERE chambre_id = ? 
-      AND statut != 'annulee'
-      AND (
-        (date_arrivee < ? AND date_depart > ?) 
-        OR (date_arrivee < DATE_ADD(?, INTERVAL 1 HOUR) AND date_depart > DATE_SUB(?, INTERVAL 1 HOUR))
-      )
-    `, [roomId, checkOut, checkIn, checkIn, checkOut]);
-    
-    return reservations.length === 0;
-  }
-
-  // Obtenir les types de chambre disponibles
-  static async getRoomTypes(hotelId = null) {
-    let query = `
-      SELECT 
-        type_chambre,
-        COUNT(*) as nombre_disponible,
-        AVG(prix) as prix_moyen,
-        MIN(prix) as prix_min,
-        MAX(prix) as prix_max
-      FROM chambres_hotel 
-      WHERE numero_chambre != '999' AND statut = 'disponible'
-    `;
-    let params = [];
-
-    if (hotelId) {
-      query += ' AND hotel_id = ?';
-      params.push(hotelId);
+    // Mettre à jour une chambre
+    static async update(id, roomData) {
+        const { numero_chambre, type_chambre, prix, statut, etage, surface, capacite, lit } = roomData;
+        const connection = await pool.getConnection();
+        
+        try {
+            const [result] = await connection.execute(
+                `UPDATE chambres SET 
+                 numero_chambre = ?, type_chambre = ?, prix = ?, statut = ?, etage = ?, surface = ?, capacite = ?, lit = ?
+                 WHERE id = ?`,
+                [numero_chambre, type_chambre, prix, statut, etage, surface, capacite, lit, id]
+            );
+            
+            return result.affectedRows > 0;
+        } finally {
+            connection.release();
+        }
     }
 
-    query += ' GROUP BY type_chambre';
+    // Mettre à jour le statut d'une chambre
+    static async updateStatus(id, statut) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [result] = await connection.execute(
+                'UPDATE chambres SET statut = ? WHERE id = ?',
+                [statut, id]
+            );
+            
+            return result.affectedRows > 0;
+        } finally {
+            connection.release();
+        }
+    }
 
-    const [roomTypes] = await db.execute(query, params);
-    return roomTypes;
-  }
+    // Vérifier la disponibilité d'une chambre
+    static async checkAvailability(hotelId, typeChambre, dateArrivee, dateDepart) {
+        const connection = await pool.getConnection();
+        
+        try {
+            const [availableRooms] = await connection.execute(`
+                SELECT c.id, c.numero_chambre 
+                FROM chambres c
+                WHERE c.hotel_id = ? 
+                AND c.type_chambre = ? 
+                AND c.statut = 'disponible'
+                AND c.id NOT IN (
+                    SELECT r.chambre_id 
+                    FROM reservations r 
+                    WHERE r.chambre_id IS NOT NULL 
+                    AND r.statut IN ('confirmee', 'en_cours')
+                    AND (
+                        (r.date_arrivee <= ? AND r.date_depart >= ?) OR
+                        (r.date_arrivee <= ? AND r.date_depart >= ?) OR
+                        (r.date_arrivee >= ? AND r.date_depart <= ?)
+                    )
+                )
+                LIMIT 1
+            `, [hotelId, typeChambre, dateDepart, dateArrivee, dateArrivee, dateDepart, dateArrivee, dateDepart]);
+            
+            return availableRooms[0] || null;
+        } finally {
+            connection.release();
+        }
+    }
 }
 
 module.exports = Room;

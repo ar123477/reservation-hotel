@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Réception - TogoHotel Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="../../index.html">
+                <i class="fas fa-hotel me-2"></i>TogoHotel Manager
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../index.html">Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../hotels.html">Hôtels</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav" id="userMenu">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>
+                            <span id="userName"></span>
+                        </a>
+                        <ul class="dropdown-menu" id="dashboardLinks">
+                            <li><a class="dropdown-item active" href="dashboard.html">
+                                <i class="fas fa-tachometer-alt me-2"></i>Dashboard Réception
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="Auth.logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                            </a></li>
+                        </ul>
+                    </li>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenu Principal -->
+    <div class="container-fluid mt-5 pt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Tableau de bord
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#arrivals">
+                                <i class="fas fa-sign-in-alt me-2"></i>
+                                Arrivées
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#departures">
+                                <i class="fas fa-sign-out-alt me-2"></i>
+                                Départs
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#rooms">
+                                <i class="fas fa-bed me-2"></i>
+                                Chambres
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Contenu -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- En-tête -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-tachometer-alt me-2 text-primary"></i>Dashboard Réception
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+                                <i class="fas fa-sync-alt me-1"></i>Actualiser
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPIs -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card dashboard-card border-start border-primary border-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs fw-bold text-primary text-uppercase mb-1">
+                                            Arrivées Aujourd'hui
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="todayArrivals">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-sign-in-alt fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card dashboard-card border-start border-success border-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                            Départs Aujourd'hui
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="todayDepartures">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-sign-out-alt fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card dashboard-card border-start border-warning border-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                            Taux d'Occupation
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="occupancyRate">0%</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-bed fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card dashboard-card border-start border-info border-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                            Chambres Disponibles
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="availableRooms">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-door-open fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Arrivées du jour -->
+                <div class="card mb-4" id="arrivals">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sign-in-alt me-2 text-primary"></i>Arrivées du Jour
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="arrivalsList">
+                            <!-- Les arrivées seront chargées ici -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Départs du jour -->
+                <div class="card mb-4" id="departures">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sign-out-alt me-2 text-success"></i>Départs du Jour
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div id="departuresList">
+                            <!-- Les départs seront chargées ici -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- État des chambres -->
+                <div class="card" id="rooms">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bed me-2 text-warning"></i>État des Chambres
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="roomsStatus">
+                            <!-- L'état des chambres sera chargé ici -->
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Check-in -->
+    <div class="modal fade" id="checkinModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Check-in</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="checkinForm">
+                        <div class="mb-3">
+                            <label class="form-label">Réservation</label>
+                            <input type="text" class="form-control" id="checkinReservation" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="checkinRoom" class="form-label">Chambre à assigner</label>
+                            <select class="form-select" id="checkinRoom" required>
+                                <option value="">Sélectionner une chambre...</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-primary" id="confirmCheckin">Confirmer Check-in</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../js/auth.js"></script>
+    <script src="../../js/api.js"></script>
+    <script src="../../js/main.js"></script>
+    <script>
+        let currentCheckinReservation = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!Auth.requireRole(['reception', 'admin_hotel'])) return;
+            Auth.updateNavigation();
+            loadDashboardData();
+        });
+
+        // Charger les données du dashboard
+        async function loadDashboardData() {
+            try {
+                await Promise.all([
+                    loadArrivals(),
+                    loadDepartures(),
+                    loadRoomsStatus(),
+                    loadKPIs()
+                ]);
+            } catch (error) {
+                console.error('Erreur lors du chargement du dashboard:', error);
+            }
+        }
+
+        // Actualiser les données
+        async function refreshData() {
+            const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
+            const originalHtml = refreshBtn.innerHTML;
+            
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Actualisation...';
+
+            try {
+                await loadDashboardData();
+                Utils.showSuccess('Données actualisées !');
+            } catch (error) {
+                console.error('Erreur lors de l\'actualisation:', error);
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = originalHtml;
+            }
+        }
+
+        // Charger les KPIs
+        async function loadKPIs() {
+            try {
+                const stats = await API.getAdminStats();
+                
+                document.getElementById('todayArrivals').textContent = stats.today_reservations || 0;
+                document.getElementById('todayDepartures').textContent = stats.occupied_rooms || 0;
+                document.getElementById('occupancyRate').textContent = 
+                    Math.round((stats.occupied_rooms / stats.total_rooms) * 100) + '%';
+                document.getElementById('availableRooms').textContent = stats.available_rooms || 0;
+            } catch (error) {
+                console.error('Erreur lors du chargement des KPIs:', error);
+            }
+        }
+
+        // Charger les arrivées
+        async function loadArrivals() {
+            try {
+                const arrivals = await API.getArrivals();
+                displayArrivals(arrivals);
+            } catch (error) {
+                console.error('Erreur lors du chargement des arrivées:', error);
+                Utils.showError(document.getElementById('arrivalsList'), 
+                    'Impossible de charger les arrivées.');
+            }
+        }
+
+        // Afficher les arrivées
+        function displayArrivals(arrivals) {
+            const container = document.getElementById('arrivalsList');
+            
+            if (arrivals.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-check fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">Aucune arrivée prévue aujourd'hui.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Client</th><th>Chambre</th><th>Arrivée</th><th>Contact</th><th>Actions</th></tr></thead><tbody>';
+            
+            arrivals.forEach(arrival => {
+                html += `
+                    <tr>
+                        <td>
+                            <strong>${arrival.prenom} ${arrival.nom}</strong>
+                            <br><small class="text-muted">${arrival.numero_reservation}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-secondary">${Utils.getRoomTypeLabel(arrival.type_chambre)}</span>
+                        </td>
+                        <td>${API.formatDateTime(arrival.date_arrivee)}</td>
+                        <td>
+                            <small>${arrival.email}</small><br>
+                            <small>${Utils.formatPhoneNumber(arrival.telephone)}</small>
+                        </td>
+                        <td>
+                            <button class="btn btn-primary btn-sm" onclick="showCheckinModal(${arrival.id})">
+                                <i class="fas fa-sign-in-alt me-1"></i>Check-in
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Charger les départs
+        async function loadDepartures() {
+            try {
+                const departures = await API.getDepartures();
+                displayDepartures(departures);
+            } catch (error) {
+                console.error('Erreur lors du chargement des départs:', error);
+                Utils.showError(document.getElementById('departuresList'), 
+                    'Impossible de charger les départs.');
+            }
+        }
+
+        // Afficher les départs
+        function displayDepartures(departures) {
+            const container = document.getElementById('departuresList');
+            
+            if (departures.length === 0) {
+                container.innerHTML = `
+                    <div class="text-center py-4">
+                        <i class="fas fa-calendar-times fa-2x text-muted mb-3"></i>
+                        <p class="text-muted mb-0">Aucun départ prévu aujourd'hui.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '<div class="table-responsive"><table class="table table-hover"><thead><tr><th>Client</th><th>Chambre</th><th>Départ</th><th>Contact</th><th>Actions</th></tr></thead><tbody>';
+            
+            departures.forEach(departure => {
+                html += `
+                    <tr>
+                        <td>
+                            <strong>${departure.prenom} ${departure.nom}</strong>
+                            <br><small class="text-muted">${departure.numero_reservation}</small>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary">${departure.numero_chambre}</span>
+                            <br><small class="text-muted">${Utils.getRoomTypeLabel(departure.type_chambre)}</small>
+                        </td>
+                        <td>${API.formatDateTime(departure.date_depart)}</td>
+                        <td>
+                            <small>${departure.email}</small><br>
+                            <small>${Utils.formatPhoneNumber(departure.telephone)}</small>
+                        </td>
+                        <td>
+                            <button class="btn btn-success btn-sm" onclick="processCheckout(${departure.id})">
+                                <i class="fas fa-sign-out-alt me-1"></i>Check-out
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            
+            html += '</tbody></table></div>';
+            container.innerHTML = html;
+        }
+
+        // Charger l'état des chambres
+        async function loadRoomsStatus() {
+            try {
+                const rooms = await API.getRooms();
+                displayRoomsStatus(rooms);
+            } catch (error) {
+                console.error('Erreur lors du chargement des chambres:', error);
+                Utils.showError(document.getElementById('roomsStatus'), 
+                    'Impossible de charger l\'état des chambres.');
+            }
+        }
+
+        // Afficher l'état des chambres
+        function displayRoomsStatus(rooms) {
+            const container = document.getElementById('roomsStatus');
+            
+            const statusCounts = {
+                disponible: rooms.filter(r => r.statut === 'disponible').length,
+                occupee: rooms.filter(r => r.statut === 'occupee').length,
+                nettoyage: rooms.filter(r => r.statut === 'nettoyage').length,
+                maintenance: rooms.filter(r => r.statut === 'maintenance').length
+            };
+
+            container.innerHTML = `
+                <div class="col-md-3 text-center mb-3">
+                    <div class="card border-success">
+                        <div class="card-body">
+                            <div class="h2 text-success mb-0">${statusCounts.disponible}</div>
+                            <div class="text-muted">Disponibles</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center mb-3">
+                    <div class="card border-danger">
+                        <div class="card-body">
+                            <div class="h2 text-danger mb-0">${statusCounts.occupee}</div>
+                            <div class="text-muted">Occupées</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center mb-3">
+                    <div class="card border-warning">
+                        <div class="card-body">
+                            <div class="h2 text-warning mb-0">${statusCounts.nettoyage}</div>
+                            <div class="text-muted">Nettoyage</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-3 text-center mb-3">
+                    <div class="card border-secondary">
+                        <div class="card-body">
+                            <div class="h2 text-secondary mb-0">${statusCounts.maintenance}</div>
+                            <div class="text-muted">Maintenance</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Afficher le modal de check-in
+        async function showCheckinModal(reservationId) {
+            currentCheckinReservation = reservationId;
+            
+            try {
+                // Charger les chambres disponibles
+                const rooms = await API.getRooms({ statut: 'disponible' });
+                const roomSelect = document.getElementById('checkinRoom');
+                
+                roomSelect.innerHTML = '<option value="">Sélectionner une chambre...</option>';
+                rooms.forEach(room => {
+                    roomSelect.innerHTML += `<option value="${room.id}">${room.numero_chambre} - ${Utils.getRoomTypeLabel(room.type_chambre)}</option>`;
+                });
+
+                // Afficher les informations de la réservation
+                document.getElementById('checkinReservation').value = `Réservation #${reservationId}`;
+
+                const modal = new bootstrap.Modal(document.getElementById('checkinModal'));
+                modal.show();
+
+            } catch (error) {
+                console.error('Erreur lors du chargement des chambres:', error);
+                Utils.showError(document.getElementById('checkinModal'), 
+                    'Impossible de charger les chambres disponibles.');
+            }
+        }
+
+        // Confirmer le check-in
+        document.getElementById('confirmCheckin').addEventListener('click', async function() {
+            const roomId = document.getElementById('checkinRoom').value;
+            
+            if (!roomId) {
+                alert('Veuillez sélectionner une chambre.');
+                return;
+            }
+
+            const button = this;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Check-in...';
+
+            try {
+                await API.checkIn(currentCheckinReservation, roomId);
+                
+                Utils.showSuccess('Check-in effectué avec succès !');
+                
+                // Fermer le modal et recharger les données
+                const modal = bootstrap.Modal.getInstance(document.getElementById('checkinModal'));
+                modal.hide();
+                
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Erreur lors du check-in:', error);
+                Utils.showError(document.getElementById('checkinModal'), 
+                    `Erreur lors du check-in: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = 'Confirmer Check-in';
+            }
+        });
+
+        // Traiter le check-out
+        async function processCheckout(reservationId) {
+            if (!confirm('Confirmer le check-out de cette réservation ?')) {
+                return;
+            }
+
+            try {
+                await API.checkOut(reservationId);
+                Utils.showSuccess('Check-out effectué avec succès !');
+                
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Erreur lors du check-out:', error);
+                Utils.showError(document.body, `Erreur lors du check-out: ${error.message}`);
+            }
+        }
+    </script>
+</body>
+</html>

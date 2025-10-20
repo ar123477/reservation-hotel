@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Ménage - TogoHotel Manager</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="../../css/style.css" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark fixed-top">
+        <div class="container">
+            <a class="navbar-brand" href="../../index.html">
+                <i class="fas fa-hotel me-2"></i>TogoHotel Manager
+            </a>
+            <div class="collapse navbar-collapse">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="../../index.html">Accueil</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="../hotels.html">Hôtels</a>
+                    </li>
+                </ul>
+                <div class="navbar-nav" id="userMenu">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>
+                            <span id="userName"></span>
+                        </a>
+                        <ul class="dropdown-menu" id="dashboardLinks">
+                            <li><a class="dropdown-item active" href="dashboard.html">
+                                <i class="fas fa-broom me-2"></i>Dashboard Ménage
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="#" onclick="Auth.logout()">
+                                <i class="fas fa-sign-out-alt me-2"></i>Déconnexion
+                            </a></li>
+                        </ul>
+                    </li>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenu Principal -->
+    <div class="container-fluid mt-5 pt-4">
+        <div class="row">
+            <!-- Sidebar -->
+            <nav class="col-md-3 col-lg-2 d-md-block bg-light sidebar collapse">
+                <div class="position-sticky pt-3">
+                    <ul class="nav flex-column">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="#">
+                                <i class="fas fa-tachometer-alt me-2"></i>
+                                Tableau de bord
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#nettoyage">
+                                <i class="fas fa-broom me-2"></i>
+                                À Nettoyer
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#maintenance">
+                                <i class="fas fa-tools me-2"></i>
+                                Maintenance
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="#statistiques">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                Statistiques
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+
+            <!-- Contenu -->
+            <main class="col-md-9 ms-sm-auto col-lg-10 px-md-4">
+                <!-- En-tête -->
+                <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+                    <h1 class="h2">
+                        <i class="fas fa-broom me-2 text-warning"></i>Dashboard Ménage
+                    </h1>
+                    <div class="btn-toolbar mb-2 mb-md-0">
+                        <div class="btn-group me-2">
+                            <button class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+                                <i class="fas fa-sync-alt me-1"></i>Actualiser
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KPIs -->
+                <div class="row mb-4">
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card dashboard-card border-start border-warning border-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs fw-bold text-warning text-uppercase mb-1">
+                                            À Nettoyer
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="toCleanCount">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-broom fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card dashboard-card border-start border-success border-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs fw-bold text-success text-uppercase mb-1">
+                                            Nettoyées Aujourd'hui
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="cleanedToday">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-check-circle fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card dashboard-card border-start border-danger border-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs fw-bold text-danger text-uppercase mb-1">
+                                            En Maintenance
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="maintenanceCount">0</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-tools fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card dashboard-card border-start border-info border-4">
+                            <div class="card-body">
+                                <div class="row align-items-center">
+                                    <div class="col">
+                                        <div class="text-xs fw-bold text-info text-uppercase mb-1">
+                                            Taux de Complétion
+                                        </div>
+                                        <div class="h5 mb-0 fw-bold text-gray-800" id="completionRate">0%</div>
+                                    </div>
+                                    <div class="col-auto">
+                                        <i class="fas fa-tasks fa-2x text-gray-300"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chambres à nettoyer -->
+                <div class="card mb-4" id="nettoyage">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-broom me-2 text-warning"></i>Chambres à Nettoyer
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="cleaningList">
+                            <!-- Les chambres à nettoyer seront chargées ici -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chambres en maintenance -->
+                <div class="card mb-4" id="maintenance">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tools me-2 text-danger"></i>Chambres en Maintenance
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row" id="maintenanceList">
+                            <!-- Les chambres en maintenance seront chargées ici -->
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Statistiques de nettoyage -->
+                <div class="card" id="statistiques">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-bar me-2 text-info"></i>Statistiques du Jour
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row text-center">
+                            <div class="col-md-3 mb-3">
+                                <div class="h4 text-primary mb-1" id="totalRooms">0</div>
+                                <small class="text-muted">Total Chambres</small>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="h4 text-success mb-1" id="availableRooms">0</div>
+                                <small class="text-muted">Disponibles</small>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="h4 text-warning mb-1" id="cleaningRooms">0</div>
+                                <small class="text-muted">En Nettoyage</small>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="h4 text-danger mb-1" id="maintenanceRooms">0</div>
+                                <small class="text-muted">En Maintenance</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modal Rapport de Problème -->
+    <div class="modal fade" id="problemModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Signaler un Problème</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="problemForm">
+                        <div class="mb-3">
+                            <label class="form-label">Chambre</label>
+                            <input type="text" class="form-control" id="problemRoom" readonly>
+                        </div>
+                        <div class="mb-3">
+                            <label for="problemType" class="form-label">Type de problème</label>
+                            <select class="form-select" id="problemType" required>
+                                <option value="">Sélectionner un type...</option>
+                                <option value="plomberie">Problème de plomberie</option>
+                                <option value="electricite">Problème électrique</option>
+                                <option value="mobilier">Mobilier endommagé</option>
+                                <option value="menage">Nettoyage difficile</option>
+                                <option value="autre">Autre problème</option>
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label for="problemDescription" class="form-label">Description</label>
+                            <textarea class="form-control" id="problemDescription" rows="3" 
+                                      placeholder="Décrivez le problème en détail..." required></textarea>
+                        </div>
+                        <div class="form-check mb-3">
+                            <input class="form-check-input" type="checkbox" id="urgentProblem">
+                            <label class="form-check-label" for="urgentProblem">
+                                Problème urgent (nécessite une intervention immédiate)
+                            </label>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                    <button type="button" class="btn btn-danger" id="confirmProblem">Signaler le Problème</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="../../js/auth.js"></script>
+    <script src="../../js/api.js"></script>
+    <script src="../../js/main.js"></script>
+    <script>
+        let currentProblemRoom = null;
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', function() {
+            if (!Auth.requireRole(['menage', 'admin_hotel'])) return;
+            Auth.updateNavigation();
+            loadDashboardData();
+        });
+
+        // Charger les données du dashboard
+        async function loadDashboardData() {
+            try {
+                await Promise.all([
+                    loadCleaningRooms(),
+                    loadMaintenanceRooms(),
+                    loadStatistics()
+                ]);
+            } catch (error) {
+                console.error('Erreur lors du chargement du dashboard:', error);
+            }
+        }
+
+        // Actualiser les données
+        async function refreshData() {
+            const refreshBtn = document.querySelector('button[onclick="refreshData()"]');
+            const originalHtml = refreshBtn.innerHTML;
+            
+            refreshBtn.disabled = true;
+            refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Actualisation...';
+
+            try {
+                await loadDashboardData();
+                Utils.showSuccess('Données actualisées !');
+            } catch (error) {
+                console.error('Erreur lors de l\'actualisation:', error);
+            } finally {
+                refreshBtn.disabled = false;
+                refreshBtn.innerHTML = originalHtml;
+            }
+        }
+
+        // Charger les chambres à nettoyer
+        async function loadCleaningRooms() {
+            try {
+                const rooms = await API.getCleaningRooms('nettoyage');
+                displayCleaningRooms(rooms);
+                updateKPIs(rooms.length, 'toCleanCount');
+            } catch (error) {
+                console.error('Erreur lors du chargement des chambres à nettoyer:', error);
+                Utils.showError(document.getElementById('cleaningList'), 
+                    'Impossible de charger les chambres à nettoyer.');
+            }
+        }
+
+        // Afficher les chambres à nettoyer
+        function displayCleaningRooms(rooms) {
+            const container = document.getElementById('cleaningList');
+            
+            if (rooms.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <i class="fas fa-check-circle fa-2x text-success mb-3"></i>
+                        <h5 class="text-success">Excellent travail !</h5>
+                        <p class="text-muted">Toutes les chambres sont propres et prêtes.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            rooms.forEach(room => {
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card cleaning-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">
+                                        Chambre ${room.numero_chambre}
+                                    </h5>
+                                    <span class="badge bg-warning">À nettoyer</span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted d-block">Étage</small>
+                                    <strong>Étage ${room.etage}</strong>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted d-block">Type</small>
+                                    <strong>${Utils.getRoomTypeLabel(room.type_chambre)}</strong>
+                                </div>
+                                
+                                <div class="btn-group w-100">
+                                    <button class="btn btn-success btn-sm" onclick="markAsCleaning(${room.id})">
+                                        <i class="fas fa-play me-1"></i>Commencer
+                                    </button>
+                                    <button class="btn btn-outline-danger btn-sm" onclick="showProblemModal(${room.id}, '${room.numero_chambre}')">
+                                        <i class="fas fa-exclamation-triangle me-1"></i>Problème
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Charger les chambres en maintenance
+        async function loadMaintenanceRooms() {
+            try {
+                const rooms = await API.getCleaningRooms('maintenance');
+                displayMaintenanceRooms(rooms);
+                updateKPIs(rooms.length, 'maintenanceCount');
+            } catch (error) {
+                console.error('Erreur lors du chargement des chambres en maintenance:', error);
+                Utils.showError(document.getElementById('maintenanceList'), 
+                    'Impossible de charger les chambres en maintenance.');
+            }
+        }
+
+        // Afficher les chambres en maintenance
+        function displayMaintenanceRooms(rooms) {
+            const container = document.getElementById('maintenanceList');
+            
+            if (rooms.length === 0) {
+                container.innerHTML = `
+                    <div class="col-12 text-center py-4">
+                        <i class="fas fa-tools fa-2x text-muted mb-3"></i>
+                        <p class="text-muted">Aucune chambre en maintenance.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            let html = '';
+            rooms.forEach(room => {
+                html += `
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card maintenance-card">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start mb-2">
+                                    <h5 class="card-title mb-0">
+                                        Chambre ${room.numero_chambre}
+                                    </h5>
+                                    <span class="badge bg-danger">Maintenance</span>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted d-block">Étage</small>
+                                    <strong>Étage ${room.etage}</strong>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <small class="text-muted d-block">Type</small>
+                                    <strong>${Utils.getRoomTypeLabel(room.type_chambre)}</strong>
+                                </div>
+                                
+                                <button class="btn btn-success btn-sm w-100" onclick="markAsAvailable(${room.id})">
+                                    <i class="fas fa-check me-1"></i>Réparée
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            
+            container.innerHTML = html;
+        }
+
+        // Charger les statistiques
+        async function loadStatistics() {
+            try {
+                const stats = await API.getAdminStats();
+                
+                document.getElementById('totalRooms').textContent = stats.total_rooms || 0;
+                document.getElementById('availableRooms').textContent = stats.available_rooms || 0;
+                document.getElementById('cleaningRooms').textContent = 
+                    (stats.total_rooms - stats.available_rooms - (stats.occupied_rooms || 0)) || 0;
+                document.getElementById('maintenanceRooms').textContent = 
+                    (stats.total_rooms - stats.available_rooms - (stats.occupied_rooms || 0) - 
+                     (stats.total_rooms - stats.available_rooms - (stats.occupied_rooms || 0))) || 0;
+
+                // Calculer le taux de complétion (simulé)
+                const cleanedToday = Math.floor(Math.random() * 10) + 5;
+                document.getElementById('cleanedToday').textContent = cleanedToday;
+                document.getElementById('completionRate').textContent = 
+                    Math.floor((cleanedToday / 20) * 100) + '%';
+
+            } catch (error) {
+                console.error('Erreur lors du chargement des statistiques:', error);
+            }
+        }
+
+        // Mettre à jour les KPIs
+        function updateKPIs(value, elementId) {
+            document.getElementById(elementId).textContent = value;
+        }
+
+        // Marquer comme "en nettoyage"
+        async function markAsCleaning(roomId) {
+            if (!confirm('Commencer le nettoyage de cette chambre ?')) return;
+
+            try {
+                await API.updateRoomStatus(roomId, 'nettoyage');
+                Utils.showSuccess('Nettoyage en cours !');
+                
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Erreur lors du changement de statut:', error);
+                Utils.showError(document.body, `Erreur: ${error.message}`);
+            }
+        }
+
+        // Marquer comme disponible
+        async function markAsAvailable(roomId) {
+            if (!confirm('Marquer cette chambre comme disponible ?')) return;
+
+            try {
+                await API.updateRoomStatus(roomId, 'disponible');
+                Utils.showSuccess('Chambre marquée comme disponible !');
+                
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Erreur lors du changement de statut:', error);
+                Utils.showError(document.body, `Erreur: ${error.message}`);
+            }
+        }
+
+        // Afficher le modal de problème
+        function showProblemModal(roomId, roomNumber) {
+            currentProblemRoom = roomId;
+            document.getElementById('problemRoom').value = `Chambre ${roomNumber}`;
+            
+            const modal = new bootstrap.Modal(document.getElementById('problemModal'));
+            modal.show();
+        }
+
+        // Confirmer le signalement de problème
+        document.getElementById('confirmProblem').addEventListener('click', async function() {
+            const problemType = document.getElementById('problemType').value;
+            const problemDescription = document.getElementById('problemDescription').value;
+            const isUrgent = document.getElementById('urgentProblem').checked;
+
+            if (!problemType || !problemDescription) {
+                alert('Veuillez remplir tous les champs obligatoires.');
+                return;
+            }
+
+            const button = this;
+            button.disabled = true;
+            button.innerHTML = '<i class="fas fa-spinner fa-spin me-1"></i>Signalement...';
+
+            try {
+                // Marquer la chambre comme en maintenance
+                await API.updateRoomStatus(currentProblemRoom, 'maintenance');
+                
+                // Ici, vous pourriez envoyer une notification ou enregistrer le problème dans une base de données
+                console.log('Problème signalé:', {
+                    roomId: currentProblemRoom,
+                    type: problemType,
+                    description: problemDescription,
+                    urgent: isUrgent
+                });
+
+                Utils.showSuccess('Problème signalé ! La chambre a été mise en maintenance.');
+                
+                // Fermer le modal et recharger les données
+                const modal = bootstrap.Modal.getInstance(document.getElementById('problemModal'));
+                modal.hide();
+                
+                setTimeout(() => {
+                    loadDashboardData();
+                }, 1000);
+
+            } catch (error) {
+                console.error('Erreur lors du signalement:', error);
+                Utils.showError(document.getElementById('problemModal'), 
+                    `Erreur lors du signalement: ${error.message}`);
+            } finally {
+                button.disabled = false;
+                button.innerHTML = 'Signaler le Problème';
+            }
+        });
+
+        // Réinitialiser le formulaire de problème quand le modal se ferme
+        document.getElementById('problemModal').addEventListener('hidden.bs.modal', function() {
+            document.getElementById('problemForm').reset();
+        });
+    </script>
+
+    <style>
+        .cleaning-card {
+            border-left: 4px solid #ffc107;
+        }
+        
+        .maintenance-card {
+            border-left: 4px solid #dc3545;
+        }
+        
+        .cleaning-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(255, 193, 7, 0.2);
+        }
+        
+        .maintenance-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(220, 53, 69, 0.2);
+        }
+        
+        .sidebar {
+            min-height: calc(100vh - 76px);
+            box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+        }
+        
+        .sidebar .nav-link {
+            color: #333;
+            padding: 0.75rem 1rem;
+            border-radius: 0.375rem;
+        }
+        
+        .sidebar .nav-link.active {
+            color: #0d6efd;
+            background-color: #e7f1ff;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: #0d6efd;
+            background-color: #f8f9fa;
+        }
+    </style>
+</body>
+</html>

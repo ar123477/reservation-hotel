@@ -2,54 +2,69 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 
+const routes = require('./routes');
+
 const app = express();
+const PORT = process.env.PORT || 3001;
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
-// Routes
-app.use('/api/authentification', require('./routes/authentificationRoutes'));
-app.use('/api/hotels', require('./routes/hotelRoutes'));
-app.use('/api/chambres', require('./routes/chambreRoutes'));
-app.use('/api/reservations', require('./routes/reservationRoutes'));
-app.use('/api/nettoyage', require('./routes/nettoyageRoutes'));
-app.use('/api/reception', require('./routes/receptionRoutes'));
-app.use('/api/paiements', require('./routes/paymentRoutes')); // ✅ PAYMENT INCLUS
+// Routes API
+app.use('/api', routes);
 
-// Route de test
-app.get('/api/test', (req, res) => {
-  res.json({ 
-    message: 'API Hôtels Togo fonctionne!',
-    version: '1.0.0',
-    auteur: 'Système de Gestion Hôtelière Togo'
-  });
+// Route de santé
+app.get('/api/health', (req, res) => {
+    res.json({ 
+        status: 'OK', 
+        message: 'TogoHotel Manager API is running',
+        timestamp: new Date().toISOString(),
+        version: '1.0.0'
+    });
 });
 
-// Route d'accueil
+// Route racine
 app.get('/', (req, res) => {
-  res.json({
-    message: 'Bienvenue sur l\'API de Gestion Hôtelière du Togo',
-    endpoints: {
-      authentification: '/api/authentification',
-      hotels: '/api/hotels', 
-      chambres: '/api/chambres',
-      reservations: '/api/reservations',
-      nettoyage: '/api/nettoyage',
-      reception: '/api/reception',
-      paiements: '/api/paiements' // ✅ CORRECTION : PAYMENT AJOUTÉ
-    }
-  });
+    res.json({
+        message: 'Bienvenue sur TogoHotel Manager API',
+        version: '1.0.0',
+        endpoints: {
+            auth: '/api/auth',
+            hotels: '/api/hotels',
+            rooms: '/api/rooms',
+            reservations: '/api/reservations',
+            health: '/api/health'
+        },
+        documentation: 'Voir la documentation pour plus de détails'
+    });
 });
 
 // Gestion des erreurs 404
 app.use('*', (req, res) => {
-  res.status(404).json({ message: 'Route non trouvée' });
+    res.status(404).json({ 
+        error: 'Route non trouvée',
+        path: req.originalUrl
+    });
 });
 
-const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`🚀 Serveur backend démarré sur le port ${PORT}`);
-  console.log(`🏨 Système Hôtels Togo activé`);
-  console.log(`🔗 URL: http://localhost:${PORT}`);
+// Gestion globale des erreurs
+app.use((error, req, res, next) => {
+    console.error('Erreur globale:', error);
+    res.status(500).json({ 
+        error: 'Erreur interne du serveur',
+        message: process.env.NODE_ENV === 'development' ? error.message : 'Une erreur est survenue'
+    });
 });
+
+// Démarrage du serveur
+app.listen(PORT, () => {
+    console.log(`🚀 Serveur TogoHotel Manager démarré sur le port ${PORT}`);
+    console.log(`📊 Environnement: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`🌐 API disponible sur: http://localhost:${PORT}/api`);
+    console.log(`❤️  Route de santé: http://localhost:${PORT}/api/health`);
+    console.log(`🏠 Route racine: http://localhost:${PORT}/`);
+});
+
+module.exports = app;
